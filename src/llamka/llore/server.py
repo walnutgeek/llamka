@@ -1,7 +1,6 @@
-from typing import override
-
 import tornado.ioloop
 import tornado.web
+from typing_extensions import override
 
 
 class MainHandler(tornado.web.RequestHandler):

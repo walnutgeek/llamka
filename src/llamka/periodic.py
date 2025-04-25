@@ -4,9 +4,10 @@ import logging
 import sys
 import time as tt
 from collections.abc import Callable
-from typing import Annotated, Any, final, override
+from typing import Annotated, Any, final
 
 from pydantic import BeforeValidator, PlainSerializer, WithJsonSchema
+from typing_extensions import override
 
 from llamka import str_or_none
 

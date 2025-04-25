@@ -4,9 +4,10 @@ import logging
 import sys
 from inspect import isclass, iscoroutinefunction, isfunction, ismodule
 from types import ModuleType
-from typing import Any, Self, final, override
+from typing import Any, Self, final
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 log = logging.getLogger(__name__)
 

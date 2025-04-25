@@ -41,6 +41,7 @@ dependencies = [
     "streamlit",
     "streamlit-chat",
     "pydantic",
+    "typing-extensions"
 ]
 
 

@@ -2,10 +2,11 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable
-from typing import Any, override
+from typing import Any
 
 import pytest
 import tornado
+from typing_extensions import override
 
 from llamka.service import BIND_ERRNO, App, AppService, AppState, PortSeekStrategy, get_json
 

@@ -5,10 +5,11 @@ import platform
 import signal
 from collections.abc import Callable, Generator
 from enum import Enum
-from typing import Any, cast, override
+from typing import Any, cast
 
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
+from typing_extensions import override
 
 from llamka import random_port
 from llamka.periodic import PeriodicTask, run_all
