@@ -2,17 +2,17 @@
 
 Chatbot ecosystem: grow your second brain here
 
-Framework/API/UI to develop/educate/evaluate and compare you chatbots
+Framework/API/UI to develop/educate/evaluate and compare your chatbots
 
 ## Architecture
 
-* llore - (llamka-core) Tornado App that keep everithing running. llore provides api and all other services  build on top of it
+* llore - (llamka-core) Tornado App that keep everything running. llore provides api and all other services built on top of it
     * provide absration interface over LLM providers (local, remote)
     * maintain chatbot library (includes: system prompt, finetuning and augmentation pipelines, data dependencies, and build schedule)
-    * stores chatbot interations in oumi conversation format per user
-    * maintain libraries of coversation datasets and use them for tuning
+    * stores chatbot interactions in oumi conversation format per user
+    * maintain libraries of conversation datasets and use them for tuning
     * maintain external document locations and rebuild vector db collections on changes
-    * schedule and run piplines: finetuning, RAG, chatbot evaluation 
+    * schedule and run pipelines: finetuning, RAG, chatbot evaluation 
     * monitor and run services: databases, queues, proxies, ui (llit)
 
 * llit - streamlit UI 
@@ -26,7 +26,7 @@ Framework/API/UI to develop/educate/evaluate and compare you chatbots
 
  ## Unsorted thoughts
 
-* Pipeline that run periodically and retrive documents from varies sources
+* Pipeline that run periodically and retrieve documents from varies sources
 * Cut documents in chunks and store them in *croma vector db* adding metedata that points back to original documents
 * Run queries from ChatBot thru RAG pipeline that use vector db above
 
