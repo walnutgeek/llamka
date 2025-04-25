@@ -40,6 +40,7 @@ classifiers = [
 dependencies = [
     "streamlit",
     "streamlit-chat",
+    "pydantic",
 ]
 
 
@@ -55,12 +56,14 @@ dev = [
     "rich>=13.9.4",
     "basedpyright>=1.28.2",
     "funlog>=0.2.0",
+    "coverage>=7.6.7",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.1",
 ]
 
 [project.scripts]
 # Add script entry points here:
-llamka = "llamka:app"
-
+llamka = "llamka.llore.server:run_server"
 
 # ---- Build system ----
 
@@ -155,8 +158,9 @@ reportUnreachable = false
 # reportPrivateLocalImportUsage = false
 # reportMissingImports = false
 # reportUnnecessaryIsInstance = false
-# reportUnknownVariableType = false
-# reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
 
 [tool.codespell]
 # Add here as needed:
@@ -173,3 +177,8 @@ testpaths = [
 ]
 norecursedirs = []
 filterwarnings = []
+addopts = ["--doctest-modules", "--cov=src", "--cov-report=term-missing"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "debug: marks tests for debugging (select with '-m debug')",
+]
