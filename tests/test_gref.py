@@ -2,8 +2,6 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, final
 
-import pytest
-
 from llamka import GlobalRef, Logic
 
 
@@ -89,7 +87,6 @@ def assert_ae(
         raise AssertionError(f"Expected AssertionError({expected_to_start_with!r}) not raised")
 
 
-@pytest.mark.debug
 def test_logic():
     print(GlobalRef(test_logic))
     assert Logic({"ref$": "test_gref:s2"}).call() == 2

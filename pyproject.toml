@@ -41,7 +41,19 @@ dependencies = [
     "streamlit",
     "streamlit-chat",
     "pydantic",
-    "typing-extensions"
+    "typing-extensions",
+    "langchain",
+    "langchain-community",
+    "langchain-openai",
+    "langchain-chroma",
+    "langchain-huggingface",
+    "sentence_transformers",
+    "chromadb",
+    "unstructured",
+    "python-magic",
+    "pdf2image",
+    "pytesseract",
+    "pypandoc"
 ]
 
 
