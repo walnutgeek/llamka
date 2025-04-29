@@ -8,6 +8,7 @@ from llamka.llore.config import load_config
 data_config = Path("data/config.json")
 stub_config = Path("tests/config.json")
 if not data_config.exists():
+    data_config.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(stub_config, data_config)
 
 
