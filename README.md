@@ -1,5 +1,7 @@
 # llamka
 
+[![CI](https://github.com/llamka/llamka/actions/workflows/ci.yml/badge.svg)](https://github.com/llamka/llamka/actions/workflows/ci.yml)
+
 Chatbot ecosystem: grow your second brain here
 
 Framework/API/UI to develop/educate/evaluate and compare your chatbots
