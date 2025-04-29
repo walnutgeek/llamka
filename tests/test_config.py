@@ -1,6 +1,14 @@
+import shutil
+from pathlib import Path
+
 import pytest
 
 from llamka.llore.config import load_config
+
+data_config = Path("data/config.json")
+stub_config = Path("tests/config.json")
+if not data_config.exists():
+    shutil.copy(stub_config, data_config)
 
 
 @pytest.mark.debug

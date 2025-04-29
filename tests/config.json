@@ -1,0 +1,26 @@
+{
+    "files": [
+        "~/Downloads/DuckDB_In_Action_Final_MotherDuck.pdf"
+    ],
+    "models": [{
+        "name": "4o",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "api_key": "sk-pr....",
+        "params": {
+            "model": "gpt-4o",
+            "temperature": 0.5
+        }
+    }],
+    "vectorization": {
+        "vector_db": {
+            "type": "chroma",
+            "vector_db_path": "data/chroma",
+            "collection_name": "documents"
+        },
+        "embedding": {
+            "model_name": "all-MiniLM-L6-v2",
+            "model_params": {"device": "cpu"},
+            "encode_params": {"normalize_embeddings": true}
+        }
+    }
+}
