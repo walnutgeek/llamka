@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import cast
 
 import pytest
 
@@ -60,7 +59,8 @@ def test_add_attempt():
         assert s.source_id == -1
         s.save(conn)
         assert s.source_id != -1
-        s_loaded = cast(Source, Source.load_by_id(conn, s.source_id))
+        s_loaded = Source.load_by_id(conn, s.source_id)
+        assert s_loaded is not None
         assert s_loaded == s
         assert isinstance(s_loaded.absolute_path, Path)
         a = VectorizationAttempt(
@@ -96,11 +96,14 @@ def test_add_attempt():
             sha256="1122334455",
         )
         c.save(conn)
-        a_loaded = cast(VectorizationAttempt, VectorizationAttempt.load_by_id(conn, a.attempt_id))
-        b_loaded = cast(VectorizationAttempt, VectorizationAttempt.load_by_id(conn, b.attempt_id))
-        c_loaded = cast(VectorizationAttempt, VectorizationAttempt.load_by_id(conn, c.attempt_id))
+        a_loaded = VectorizationAttempt.load_by_id(conn, a.attempt_id)
+        b_loaded = VectorizationAttempt.load_by_id(conn, b.attempt_id)
+        c_loaded = VectorizationAttempt.load_by_id(conn, c.attempt_id)
         nothing_loaded = VectorizationAttempt.load_by_id(conn, 7)
         assert nothing_loaded is None
+        assert a_loaded is not None
+        assert b_loaded is not None
+        assert c_loaded is not None
         assert a_loaded == a, f"{a_loaded=} != {a=}"
         assert b_loaded == b, f"{b_loaded=} != {b=}"
         assert c_loaded == c, f"{c_loaded=} != {c=}"

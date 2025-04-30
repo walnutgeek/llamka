@@ -3,7 +3,7 @@ from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Generic, NamedTuple, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -17,6 +17,9 @@ class TypeInfo(NamedTuple):
     @classmethod
     def get(cls, field_name: str) -> "TypeInfo":
         return _type_info_values[field_name]
+
+
+T = TypeVar("T", bound="DbModel")  # pyright: ignore [reportMissingTypeArgument]
 
 
 class FieldInfo(NamedTuple):
@@ -61,18 +64,18 @@ class FieldInfo(NamedTuple):
             foreign_key=foreign_key,
         )
 
-    def to_sql_value(self, o: "DbModel") -> Any:
+    def to_sql_value(self, o: "DbModel[T]") -> Any:
         v = getattr(o, self.name)
         return None if v is None else self.type_info.to_sql_fn(v)
 
     def from_sql_value(self, v: Any) -> Any:
         return None if v is None else self.type_info.from_sql_fn(v)
 
-    def set_value(self, o: "DbModel", v: Any):
+    def set_value(self, o: "DbModel[T]", v: Any):
         setattr(o, self.name, self.from_sql_value(v))
 
 
-class DbModel(BaseModel):
+class DbModel(BaseModel, Generic[T]):
     @classmethod
     def get_field_infos(
         cls, filter: Callable[[FieldInfo], bool] = lambda _: True
@@ -143,7 +146,7 @@ class DbModel(BaseModel):
         return cursor.rowcount
 
     @classmethod
-    def load_by_id(cls, conn: sqlite3.Connection, id: int) -> "DbModel | None":
+    def load_by_id(cls: type[T], conn: sqlite3.Connection, id: int) -> T | None:
         pks = list(cls.get_field_infos(lambda fi: fi.primary_key))
         fields = list(cls.get_field_infos())
         assert len(pks) == 1
@@ -159,7 +162,7 @@ class DbModel(BaseModel):
         return None
 
     @classmethod
-    def select(cls, conn: sqlite3.Connection, **filters: Any) -> list["DbModel"]:
+    def select(cls, conn: sqlite3.Connection, **filters: Any) -> list[T]:
         """Select all rows from the database that match the filters.
 
         Filters are given as keyword arguments, the keys are the field names
@@ -180,11 +183,12 @@ class DbModel(BaseModel):
         return [cls._from_row(row, fields) for row in cursor.fetchall()]
 
     @classmethod
-    def _from_row(cls, row: tuple[Any, ...], fields: list[FieldInfo] | None = None) -> "DbModel":
+    def _from_row(cls, row: tuple[Any, ...], fields: list[FieldInfo] | None = None) -> T:
         if fields is None:
             fields = list(cls.get_field_infos())  # pragma: no cover
-        return cls.model_validate(
-            {fi.name: fi.from_sql_value(row[i]) for i, fi in enumerate(fields)}
+        return cast(
+            T,
+            cls.model_validate({fi.name: fi.from_sql_value(row[i]) for i, fi in enumerate(fields)}),
         )
 
 

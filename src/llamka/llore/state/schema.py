@@ -6,12 +6,12 @@ from pydantic import BaseModel, Field
 from llamka.llore.state import DbModel, open_sqlite_db
 
 
-class Source(DbModel):
+class Source(DbModel["Source"]):
     source_id: int = Field(default=-1, description="(PK) Unique identifier for the source")
     absolute_path: Path = Field(description="Absolute path to the source file")
 
 
-class VectorizationAttempt(DbModel):
+class VectorizationAttempt(DbModel["VectorizationAttempt"]):
     attempt_id: int = Field(default=-1, description="(PK) Unique identifier for the attempt")
     source_id: int = Field(
         description="(FK:Source.source_id) Reference to the source being vectorized"
