@@ -73,23 +73,49 @@ class FieldInfo(NamedTuple):
 
 
 class DbModel(BaseModel):
+    @classmethod
+    def get_field_infos(
+        cls, filter: Callable[[FieldInfo], bool] = lambda _: True
+    ) -> Generator[FieldInfo, None, None]:
+        for field_name, field_info in cls.model_fields.items():
+            fi = FieldInfo.build(field_name, field_info)
+            if filter(fi):
+                yield fi
+
+    @classmethod
+    def create_ddl(cls) -> str:
+        fields = []
+        for fi in cls.get_field_infos():
+            type_name = (
+                f"{fi.type_info.sql_type}{' NULL' if fi.nullable else ''}"
+                + f"{' PRIMARY KEY' if fi.primary_key else ''}"
+                + (
+                    f" REFERENCES {fi.foreign_key[0]}({fi.foreign_key[1]})"
+                    if fi.foreign_key
+                    else ""
+                )
+            )
+            fields.append(f"{fi.name} {type_name}")
+
+        return f"CREATE TABLE {cls.__name__} (" + ", ".join(fields) + ")"
+
     def _insert(self, conn: sqlite3.Connection, auto_increment: bool = False):
         cursor = conn.cursor()
         cls = self.__class__
-        fields = list(get_field_infos(cls, lambda fi: not auto_increment or not fi.primary_key))
+        fields = list(cls.get_field_infos(lambda fi: not auto_increment or not fi.primary_key))
         cursor.execute(
             f"INSERT INTO {cls.__name__} ({', '.join(map(lambda fi: fi.name, fields))}) "
             + f"VALUES ({', '.join(['?'] * len(fields))})",
             [fi.to_sql_value(self) for fi in fields],
         )
         if auto_increment:
-            pks = list(get_field_infos(cls, lambda fi: fi.primary_key))
+            pks = list(cls.get_field_infos(lambda fi: fi.primary_key))
             assert len(pks) == 1
             pks[0].set_value(self, cursor.lastrowid)
-        conn.commit()
 
     def save(self, conn: sqlite3.Connection):
-        pks = list(get_field_infos(self.__class__, lambda fi: fi.primary_key))
+        cls = self.__class__
+        pks = list(cls.get_field_infos(lambda fi: fi.primary_key))
         if len(pks) == 1:
             pk = pks[0]
             pk_val = getattr(self, pk.name)
@@ -106,8 +132,8 @@ class DbModel(BaseModel):
         cursor = conn.cursor()
         cls = self.__class__
         if pks is None:
-            pks = list(get_field_infos(cls, lambda fi: fi.primary_key))
-        non_pks = list(get_field_infos(cls, lambda fi: not fi.primary_key))
+            pks = list(cls.get_field_infos(lambda fi: fi.primary_key))  # pragma: no cover
+        non_pks = list(cls.get_field_infos(lambda fi: not fi.primary_key))
         cursor.execute(
             f"UPDATE {self.__class__.__name__} "
             + f"SET {', '.join([f'{fi.name} = ?' for fi in non_pks])} "
@@ -118,20 +144,48 @@ class DbModel(BaseModel):
 
     @classmethod
     def load_by_id(cls, conn: sqlite3.Connection, id: int) -> "DbModel | None":
-        pks = list(get_field_infos(cls, lambda fi: fi.primary_key))
-        fields = list(get_field_infos(cls))
+        pks = list(cls.get_field_infos(lambda fi: fi.primary_key))
+        fields = list(cls.get_field_infos())
         assert len(pks) == 1
         cursor = conn.cursor()
         cursor.execute(
-            f"SELECT {', '.join([fi.name for fi in fields])} FROM {cls.__name__} WHERE {pks[0].name} = ?",
+            f"SELECT {', '.join([fi.name for fi in fields])} FROM {cls.__name__} "
+            + f"WHERE {pks[0].name} = ?",
             [id],
         )
         row = cursor.fetchone()
         if row:
-            return cls.model_validate(
-                {fi.name: fi.from_sql_value(row[i]) for i, fi in enumerate(fields)}
-            )
+            return cls._from_row(row, fields)
         return None
+
+    @classmethod
+    def select(cls, conn: sqlite3.Connection, **filters: Any) -> list["DbModel"]:
+        """Select all rows from the database that match the filters.
+
+        Filters are given as keyword arguments, the keys are the field names
+        and the values are the values to filter by.
+        """
+        fields = list(cls.get_field_infos())
+        field_map = {fi.name: fi for fi in fields}
+        unknown_filters = {k: filters[k] for k in filters if k not in field_map}
+        assert len(unknown_filters) == 0, (
+            f"Known fields: {field_map.keys()}, but unknown filters: {unknown_filters.keys()}"
+        )
+        cursor = conn.cursor()
+        cursor.execute(
+            f"SELECT {', '.join([fi.name for fi in fields])} FROM {cls.__name__} "
+            + f"WHERE {' AND '.join([f'{k} = ?' for k in filters])}",
+            [field_map[k].type_info.to_sql_fn(filters[k]) for k in filters],
+        )
+        return [cls._from_row(row, fields) for row in cursor.fetchall()]
+
+    @classmethod
+    def _from_row(cls, row: tuple[Any, ...], fields: list[FieldInfo] | None = None) -> "DbModel":
+        if fields is None:
+            fields = list(cls.get_field_infos())  # pragma: no cover
+        return cls.model_validate(
+            {fi.name: fi.from_sql_value(row[i]) for i, fi in enumerate(fields)}
+        )
 
 
 def to_sql_datetime(dt: datetime) -> str:
@@ -144,29 +198,6 @@ _type_info_values = {
     "Path": TypeInfo("TEXT", str, Path, str),
     "datetime": TypeInfo("TEXT", to_sql_datetime, datetime.fromisoformat, str),
 }
-
-
-def get_field_infos(
-    model_cls: type[BaseModel], filter: Callable[[FieldInfo], bool] = lambda _: True
-) -> Generator[FieldInfo, None, None]:
-    for field_name, field_info in model_cls.model_fields.items():
-        fi = FieldInfo.build(field_name, field_info)
-        if filter(fi):
-            yield fi
-
-
-def create_ddl_from_model(model_cls: type[BaseModel]) -> str:
-    """Create a DDL from a Pydantic model"""
-    fields = []
-    for fi in get_field_infos(model_cls):
-        type_name = (
-            f"{fi.type_info.sql_type}{' NULL' if fi.nullable else ''}"
-            + f"{' PRIMARY KEY' if fi.primary_key else ''}"
-            + (f" REFERENCES {fi.foreign_key[0]}({fi.foreign_key[1]})" if fi.foreign_key else "")
-        )
-        fields.append(f"{fi.name} {type_name}")
-
-    return f"CREATE TABLE {model_cls.__name__} (" + ", ".join(fields) + ")"
 
 
 @contextmanager

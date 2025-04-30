@@ -6,7 +6,6 @@ import pytest
 from llamka.llore.state import (
     FieldInfo,
     TypeInfo,
-    create_ddl_from_model,
     open_sqlite_db,
 )
 from llamka.llore.state.schema import (
@@ -14,12 +13,6 @@ from llamka.llore.state.schema import (
     VectorizationAttempt,
     create_schema,
 )
-
-test_db_path = Path("build/tests/test.db")
-if test_db_path.exists():
-    test_db_path.unlink()
-if not test_db_path.parent.is_dir():
-    test_db_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 @pytest.mark.debug
@@ -37,13 +30,21 @@ def test_type_info():
 @pytest.mark.debug
 def test_dll():
     assert (
-        create_ddl_from_model(VectorizationAttempt)
+        VectorizationAttempt.create_ddl()
         == "CREATE TABLE VectorizationAttempt (attempt_id INTEGER PRIMARY KEY, source_id INTEGER REFERENCES Source(source_id), timestamp TEXT, n_chunks INTEGER, error TEXT NULL, sha256 TEXT)"
     )
     assert (
-        create_ddl_from_model(Source)
+        Source.create_ddl()
         == "CREATE TABLE Source (source_id INTEGER PRIMARY KEY, absolute_path TEXT)"
     )
+
+
+# test db cleanup
+test_db_path = Path("build/tests/test.db")
+if test_db_path.exists():
+    test_db_path.unlink()
+if not test_db_path.parent.is_dir():
+    test_db_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 @pytest.mark.debug
@@ -63,8 +64,43 @@ def test_add_attempt():
             error=None,
             sha256="1234567890",
         )
+        assert a.attempt_id == -1
         a.save(conn)
         assert a.attempt_id != -1
-        loaded = VectorizationAttempt.load_by_id(conn, a.attempt_id)
-        assert loaded == a, f"{loaded=} != {a=}"
+        b = VectorizationAttempt(
+            source_id=src.source_id,
+            timestamp=datetime.now(tz=UTC),
+            n_chunks=1,
+            error=None,
+            sha256="6789012345",
+        )
+        assert b.attempt_id == -1
+        b.save(conn)
+        assert b.attempt_id != -1
+        assert b.attempt_id != a.attempt_id
+        b.timestamp = datetime.now(tz=UTC)
+        b.sha256 = "6172839405"
+        b.save(conn)
+        c = VectorizationAttempt(
+            attempt_id=6,
+            source_id=src.source_id,
+            timestamp=datetime.now(tz=UTC),
+            n_chunks=6,
+            error=None,
+            sha256="1122334455",
+        )
+        c.save(conn)
+        a_loaded = VectorizationAttempt.load_by_id(conn, a.attempt_id)
+        b_loaded = VectorizationAttempt.load_by_id(conn, b.attempt_id)
+        c_loaded = VectorizationAttempt.load_by_id(conn, c.attempt_id)
+        nothing_loaded = VectorizationAttempt.load_by_id(conn, 7)
+        assert nothing_loaded is None
+        assert a_loaded == a, f"{a_loaded=} != {a=}"
+        assert b_loaded == b, f"{b_loaded=} != {b=}"
+        assert c_loaded == c, f"{c_loaded=} != {c=}"
+        select = VectorizationAttempt.select(conn, source_id=src.source_id)
+        assert len(select) == 3
+        assert a in select
+        assert b in select
+        assert c in select
         conn.commit()

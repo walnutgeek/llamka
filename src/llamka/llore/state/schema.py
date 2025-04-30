@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from llamka.llore.state import DbModel, create_ddl_from_model, open_sqlite_db
+from llamka.llore.state import DbModel, open_sqlite_db
 
 
 class Source(DbModel):
@@ -29,6 +29,6 @@ class KnownSources(BaseModel):
 def create_schema(path: Path):
     with open_sqlite_db(path) as conn:
         cursor = conn.cursor()
-        cursor.execute(create_ddl_from_model(Source))
-        cursor.execute(create_ddl_from_model(VectorizationAttempt))
+        cursor.execute(Source.create_ddl())
+        cursor.execute(VectorizationAttempt.create_ddl())
         conn.commit()
