@@ -117,12 +117,14 @@ class AppState:
     app: "App | None"
     port_seek: PortSeekStrategy
     port: int | None
+    debug: bool
 
     def __init__(
         self,
         *app_services: AppService,
         port: int | None = None,
         port_seek: PortSeekStrategy | None = None,
+        debug: bool = False,
     ):
         self.app_services = list(app_services)
         self.port = port
@@ -131,13 +133,14 @@ class AppState:
             if port_seek is not None
             else (PortSeekStrategy.RANDOM if port is None else PortSeekStrategy.SEQUENTIAL)
         )
+        self.debug = debug
         self.app = None
 
     def tornado_app(self) -> tornado.web.Application:
         routes: tornado.routing._RuleList = []  # pyright: ignore [reportPrivateUsage]
         for service in self.app_services:
             routes.extend(service.get_routes())
-        return tornado.web.Application(routes)
+        return tornado.web.Application(routes, debug=self.debug)
 
     def periodic_tasks(self) -> Generator[PeriodicTask, None, None]:
         for service in self.app_services:
