@@ -9,10 +9,10 @@ Framework/API/UI to develop/educate/evaluate and compare your chatbots
 ## Architecture
 
 * llore - (llamka-core) Tornado App that keep everything running. llore provides api and all other services built on top of it
-    * provide absration interface over LLM providers (local, remote)
+    * provide abstraction interface over LLM providers (local, remote)
+    * can store chatbot interactions in oumi conversation format per user if instructed
     * maintain chatbot library (includes: system prompt, finetuning and augmentation pipelines, data dependencies, and build schedule)
-    * stores chatbot interactions in oumi conversation format per user
-    * maintain libraries of conversation datasets and use them for tuning
+    * maintain libraries of conversation datasets and use them for tuning, RAG and testing
     * maintain external document locations and rebuild vector db collections on changes
     * schedule and run pipelines: finetuning, RAG, chatbot evaluation 
     * monitor and run services: databases, queues, proxies, ui (llit)
