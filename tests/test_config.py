@@ -1,24 +1,44 @@
 import shutil
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
 
-from llamka.llore.config import load_config
+from llamka.llore.config import BotConfig, Config, FileGlob, load_config
 
-data_config = Path("data/config.json")
-stub_config = Path("tests/config.json")
-if not data_config.exists():
-    data_config.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(stub_config, data_config)
+
+class EnsureFile(NamedTuple):
+    src: Path
+    target_dir: Path
+
+    def ensure(self):
+        target = self.target_dir / self.src.name
+        if not target.exists():
+            self.target_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(self.src, target)
+
+
+EnsureFile(Path("tests/config.json"), Path("data/")).ensure()
+EnsureFile(Path("tests/cryptoduck.json"), Path("data/bots/")).ensure()
 
 
 @pytest.mark.debug
 def test_config():
-    config = load_config("data/config.json")
-    assert config.models[0].name == "4o"
-    assert config.models[0].url[:8] == "https://"
-    assert config.models[0].api_key[:3] == "sk-"
-    assert config.models[0].params == {"model": "gpt-4o", "temperature": 0.5}
-    assert len(config.files) >= 1
-    # for f in config.get_paths():
-    #     assert f.exists()
+    config, bots = load_config("data/config.json")
+    assert isinstance(config, Config)
+    list_of_keys = list(config.llm_models.keys())
+    assert list_of_keys == ["4o", "phi4", "llama3.2", "mistral"]
+    _4o = config.llm_models[list_of_keys[0]]
+    assert _4o.model_name == "gpt-4o"
+    assert _4o.url[:8] == "https://"
+    assert _4o.api_key is not None
+    assert _4o.api_key[:3] == "sk-"
+    _phi4 = config.llm_models[list_of_keys[1]]
+    assert _phi4.model_name == "phi4:latest"
+    assert _phi4.api_key is None
+    assert _phi4.url[:7] == "http://"
+    for bot in bots:
+        assert isinstance(bot, BotConfig)
+        assert isinstance(bot.files[0], FileGlob)
+        assert bot.files[0].dir is not None
+        assert bot.files[0].glob is not None

@@ -77,6 +77,19 @@ class FieldInfo(NamedTuple):
 
 class DbModel(BaseModel, Generic[T]):
     @classmethod
+    def get_table_name(cls) -> str:
+        return cls.__name__
+
+    @classmethod
+    def alias(cls, alias: str) -> str:
+        return f"{cls.get_table_name()} as {alias}"
+
+    @classmethod
+    def columns(cls, alias: str | None = None) -> str:
+        alias = "" if alias is None else f"{alias}."
+        return ", ".join([f"{alias}{c.name}" for c in cls.get_field_infos()])
+
+    @classmethod
     def get_field_infos(
         cls, filter: Callable[[FieldInfo], bool] = lambda _: True
     ) -> Generator[FieldInfo, None, None]:
@@ -102,7 +115,7 @@ class DbModel(BaseModel, Generic[T]):
 
         return f"CREATE TABLE {cls.__name__} (" + ", ".join(fields) + ")"
 
-    def _insert(self, conn: sqlite3.Connection, auto_increment: bool = False):
+    def insert(self, conn: sqlite3.Connection, auto_increment: bool = False):
         cursor = conn.cursor()
         cls = self.__class__
         fields = list(cls.get_field_infos(lambda fi: not auto_increment or not fi.primary_key))
@@ -123,11 +136,11 @@ class DbModel(BaseModel, Generic[T]):
             pk = pks[0]
             pk_val = getattr(self, pk.name)
             if pk_val == -1:
-                self._insert(conn, auto_increment=True)
+                self.insert(conn, auto_increment=True)
                 return
         n_updated = self._update(conn, pks)
         if n_updated == 0:
-            self._insert(conn)
+            self.insert(conn)
         else:
             assert n_updated == 1
 
@@ -136,6 +149,7 @@ class DbModel(BaseModel, Generic[T]):
         cls = self.__class__
         if pks is None:
             pks = list(cls.get_field_infos(lambda fi: fi.primary_key))  # pragma: no cover
+        assert len(pks) > 0, f"Cannot update. No primary key found for {self.__class__.__name__}"
         non_pks = list(cls.get_field_infos(lambda fi: not fi.primary_key))
         cursor.execute(
             f"UPDATE {self.__class__.__name__} "
@@ -186,10 +200,21 @@ class DbModel(BaseModel, Generic[T]):
     def _from_row(cls, row: tuple[Any, ...], fields: list[FieldInfo] | None = None) -> T:
         if fields is None:
             fields = list(cls.get_field_infos())  # pragma: no cover
+        assert len(row) == len(fields)
         return cast(
             T,
             cls.model_validate({fi.name: fi.from_sql_value(row[i]) for i, fi in enumerate(fields)}),
         )
+
+
+def from_multi_model_row(
+    row: tuple[Any, ...], models: list[type[DbModel[Any]]]
+) -> Generator[DbModel[Any], None, None]:
+    start = 0
+    for model in models:
+        fields = list(model.get_field_infos())
+        yield model._from_row(row[start : start + len(fields)], fields)  # pyright: ignore [reportPrivateUsage]
+        start += len(fields)
 
 
 def to_sql_datetime(dt: datetime) -> str:
@@ -201,6 +226,7 @@ _type_info_values = {
     "str": TypeInfo("TEXT", str, str, str),
     "Path": TypeInfo("TEXT", str, Path, str),
     "datetime": TypeInfo("TEXT", to_sql_datetime, datetime.fromisoformat, str),
+    "Literal": TypeInfo("TEXT", str, str, str),
 }
 
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChatModel(BaseModel):
@@ -11,6 +11,21 @@ class ChatModel(BaseModel):
     params: dict[str, Any]
 
 
+class BasicAuth(BaseModel):
+    username: str
+    password: str
+
+
+class LLMModel(BaseModel):
+    model_name: str
+    context_window: int
+    stream: bool
+    url: str
+    api_key: str | None = Field(default=None)
+    basic_auth: BasicAuth | None = Field(default=None)
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
 class EmbeddingModel(BaseModel):
     model_name: str
     model_params: dict[str, Any]
@@ -18,35 +33,45 @@ class EmbeddingModel(BaseModel):
 
 
 class VectorDb(BaseModel):
-    # type: str
-    vector_db_path: Path
-    collection_name: str
+    dir: Path
+    embeddings: EmbeddingModel
 
     def ensure_dir(self):
-        self.vector_db_path.mkdir(parents=True, exist_ok=True)
-        return str(self.vector_db_path)
+        self.dir.mkdir(parents=True, exist_ok=True)
+        return str(self.dir)
 
 
-class Vectorization(BaseModel):
-    vector_db: VectorDb
-    embedding: EmbeddingModel
+class FileGlob(BaseModel):
+    dir: Path
+    glob: str
 
-
-class StateDb(BaseModel):
-    state_db_path: Path
-    type: str
-    params: dict[str, Any]
+    def get_matching_files(self) -> list[Path]:
+        return list(self.dir.glob(self.glob))
 
 
 class Config(BaseModel):
-    files: list[str]
-    models: list[ChatModel]
-    vectorization: Vectorization
-
-    def get_paths(self) -> list[Path]:
-        return [Path(f).expanduser().absolute() for f in self.files]
+    bots: FileGlob
+    state_path: Path
+    vector_db: VectorDb
+    llm_models: dict[str, LLMModel]
 
 
-def load_config(path: str) -> Config:
-    with open(path) as f:
-        return Config.model_validate_json(f.read())
+class ModelParams(BaseModel):
+    name: str
+    params: dict[str, Any]
+
+
+class BotConfig(BaseModel):
+    name: str
+    files: list[FileGlob]
+    vector_db_collection: str
+    model: ModelParams
+
+
+def load_config(path: str) -> tuple[Config, list[BotConfig]]:
+    config = Config.model_validate_json(open(path).read())
+    bots = [
+        BotConfig.model_validate_json(open(f).read())
+        for f in config.bots.dir.glob(config.bots.glob)
+    ]
+    return config, bots

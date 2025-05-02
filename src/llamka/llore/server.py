@@ -9,6 +9,7 @@ from llamka.service import App, AppService, AppState
 
 async def check_on_vectorization_sources():
     """Check on vectorization sources"""
+
     print("Checking on vectorization sources")
 
 

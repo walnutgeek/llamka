@@ -1,26 +1,39 @@
-{
-    "files": [
-        "~/Downloads/DuckDB_In_Action_Final_MotherDuck.pdf"
-    ],
-    "models": [{
-        "name": "4o",
-        "url": "https://api.openai.com/v1/chat/completions",
-        "api_key": "sk-pr....",
-        "params": {
-            "model": "gpt-4o",
-            "temperature": 0.5
-        }
-    }],
-    "vectorization": {
-        "vector_db": {
-            "type": "chroma",
-            "vector_db_path": "data/chroma",
-            "collection_name": "documents"
-        },
-        "embedding": {
+{   
+    "bots" : { "path" : "data/bots/", "glob" : "*.json" },
+    "state_path" : "data/state/",
+    "vector_db" : {
+        "path" : "data/chroma/", 
+        "embeddings": {
             "model_name": "all-MiniLM-L6-v2",
             "model_params": {"device": "cpu"},
             "encode_params": {"normalize_embeddings": true}
+        }
+    },
+    "llm_models" : {
+        "4o" : {
+            "model_name" : "gpt-4o",
+            "url" : "https://api.openai.com/v1/chat/completions",
+            "context_window" : 128000,
+            "stream" : false,
+            "api_key" : "sk-proj-....."
+        }, 
+        "phi4" : {
+            "model_name" : "phi4:latest",
+            "context_window" : 16384,
+            "stream" : false,
+            "url" : "http://localhost:11434/api/generate"
+        },
+        "llama3.2" : {
+            "model_name" : "llama3.2:latest",
+            "context_window" : 131072,
+            "stream" : false,
+            "url" : "http://localhost:11434/api/generate"
+        },
+        "mistral" : {
+            "model_name" : "mistral:latest",
+            "context_window" : 32768,
+            "stream" : false,
+            "url" : "http://localhost:11434/api/generate"
         }
     }
 }
