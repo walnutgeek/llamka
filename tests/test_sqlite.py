@@ -106,7 +106,10 @@ def test_add_attempt():
         a2.sha256 = "6172839405"
         a2.save(conn)
         select = select_all_active_sources(conn)
-        assert len(select) == 1
+        if len(select) != 1:
+            print(f"{select=}")
+            raise AssertionError(f"{select=}")
+        
         assert len(select[0][2]) == 1
 
         a3 = RagAction(
