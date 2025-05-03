@@ -62,8 +62,7 @@ def select_all_active_sources(
 ) -> list[tuple[RagSource, RagAction, list[RagActionCollection]]]:
     cursor = conn.cursor()
     cursor.execute(
-        f"WITH timestamps as (SELECT a.source_id, max(a.timestamp) as last_action_timestamp FROM {RagAction.alias('a')} GROUP BY a.source_id), "
-        + f" last_actions as ( SELECT a.action_id FROM {RagAction.alias('a')}, timestamps t WHERE a.source_id = t.source_id AND a.timestamp = t.last_action_timestamp)"
+        f"WITH last_actions as (SELECT a.source_id, max(a.action_id) as action_id FROM {RagAction.alias('a')} GROUP BY a.source_id) "
         + f" SELECT {RagSource.columns('s')}, {RagAction.columns('a')}, {RagActionCollection.columns('c')} "
         + f"   FROM {RagSource.alias('s')}, {RagAction.alias('a')}, {RagActionCollection.alias('c')}, last_actions l "
         + "   WHERE s.source_id = a.source_id AND l.action_id = a.action_id AND c.action_id = a.action_id ORDER BY a.source_id"
