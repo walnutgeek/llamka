@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
+import time
 
 import pytest
 
@@ -76,6 +77,7 @@ def test_add_attempt():
         )
         assert a1.action_id == -1
         a1.save(conn)
+        time.sleep(.001)
         assert a1.action_id != -1
         c1 = RagActionCollection(
             action_id=a1.action_id,
@@ -84,6 +86,7 @@ def test_add_attempt():
             timestamp=datetime.now(tz=UTC),
         )
         c1.insert(conn)
+        time.sleep(.001)
         a2 = RagAction(
             source_id=s.source_id,
             timestamp=datetime.now(tz=UTC),
@@ -93,6 +96,7 @@ def test_add_attempt():
         )
         assert a2.action_id == -1
         a2.save(conn)
+        time.sleep(.001)
         assert a2.action_id != -1
         assert a2.action_id != a1.action_id
         c2 = RagActionCollection(
@@ -102,9 +106,11 @@ def test_add_attempt():
             timestamp=datetime.now(tz=UTC),
         )
         c2.insert(conn)
+        time.sleep(.001) 
         a2.timestamp = datetime.now(tz=UTC)
         a2.sha256 = "6172839405"
         a2.save(conn)
+        time.sleep(.001)
         select = select_all_active_sources(conn)
         if len(select) != 1:
             print(f"{select=}")
@@ -121,6 +127,7 @@ def test_add_attempt():
             sha256="1122334455",
         )
         a3.save(conn)
+        time.sleep(.001)
         c3 = RagActionCollection(
             action_id=a3.action_id,
             action="update",
@@ -128,6 +135,7 @@ def test_add_attempt():
             timestamp=datetime.now(tz=UTC),
         )
         c3.insert(conn)
+        time.sleep(.001)
         c4 = RagActionCollection(
             action_id=a3.action_id,
             action="new",
@@ -135,6 +143,7 @@ def test_add_attempt():
             timestamp=datetime.now(tz=UTC),
         )
         c4.insert(conn)
+        time.sleep(.001)
         a1_loaded = RagAction.load_by_id(conn, a1.action_id)
         a2_loaded = RagAction.load_by_id(conn, a2.action_id)
         a3_loaded = RagAction.load_by_id(conn, a3.action_id)
