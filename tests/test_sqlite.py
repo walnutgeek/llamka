@@ -57,6 +57,8 @@ def test_sqlite_db():
 @pytest.mark.debug
 def test_add_attempt():
     with open_sqlite_db(test_db_path) as conn:
+        select = select_all_active_sources(conn)
+        assert len(select) == 0
         s = RagSource(absolute_path=Path("test.txt"))
         assert s.source_id == -1
         s.save(conn)
