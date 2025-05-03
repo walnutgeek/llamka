@@ -1,8 +1,8 @@
 {   
-    "bots" : { "path" : "data/bots/", "glob" : "*.json" },
+    "bots" : { "dir" : "data/bots/", "glob" : "*.json" },
     "state_path" : "data/state/",
     "vector_db" : {
-        "path" : "data/chroma/", 
+        "dir" : "data/chroma/", 
         "embeddings": {
             "model_name": "all-MiniLM-L6-v2",
             "model_params": {"device": "cpu"},
