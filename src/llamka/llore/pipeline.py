@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +19,8 @@ from llamka.llore.vector import (
     get_vector_collection,
     load_document_into_chunks,
 )
+
+logger = logging.getLogger("llore.pipeline")
 
 
 class FileTransition:
@@ -77,8 +80,11 @@ class Llore:
     config: Config
     bots: list[BotConfig]
 
-    def __init__(self):
-        self.config, self.bots = load_config("data/config.json")
+    def __init__(self, config_path: str | Path = "data/config.json"):
+        self.config, self.bots = load_config(config_path)
+
+    def open_db(self):
+        return open_sqlite_db(self.config.state_path / "state.db")
 
     def process_files(self):
         file_states = FileStates()
@@ -88,19 +94,24 @@ class Llore:
                     fstate = file_states.add_file(file)
                     fstate.collections[bot.vector_db_collection] = FileTransition(None, True)
 
-        with open_sqlite_db(self.config.state_path / "state.db") as conn:
+        with self.open_db() as conn:
             if not check_all_tables_exist(conn):
                 create_tables(conn)
-            sources, actions, collections = zip(*select_all_active_sources(conn), strict=False)
-            for i in range(len(sources)):
-                source = sources[i]
-                file_state = file_states.add_file(source.absolute_path)
-                for c in collections:
-                    if c.action == "delete":
-                        continue
-                    if c.collection not in file_state.collections:
-                        file_state.collections[c.collection] = FileTransition(None, False)
-                    file_state.collections[c.collection].present_before_sha256 = actions[i].sha256
+            latest = select_all_active_sources(conn)
+            if latest:
+                sources, actions, collections = zip(*latest, strict=False)
+                for i in range(len(sources)):
+                    source = sources[i]
+                    file_state = file_states.add_file(source.absolute_path)
+
+                    for c in collections[i]:
+                        if c.action == "delete":
+                            continue
+                        if c.collection not in file_state.collections:
+                            file_state.collections[c.collection] = FileTransition(None, False)
+                        file_state.collections[c.collection].present_before_sha256 = actions[
+                            i
+                        ].sha256
 
         for state in file_states.states.values():
             deletes: list[str] = []
@@ -116,46 +127,50 @@ class Llore:
                 continue
             source = self.store_source(state.path)
             action = None
+            logger.debug(f"Processing {state.path}")
             if pending_uploads:
+                logger.debug(f"Pending uploads: {pending_uploads}")
                 try:
                     chunks = load_document_into_chunks(state.path)
                     if len(chunks) == 0:
-                        print(f"No chunks for {state.path}")
+                        logger.debug(f"No chunks for {state.path}")
                         continue
                     action = self.store_action(source, len(chunks), state)
                     for collection, action_type in pending_uploads:
                         db = get_vector_collection(self.config, collection)
                         if action_type == "update":
-                            db.delete(where={"metadata": {"source": str(state.path)}})
+                            db.delete(where={"source": str(state.path)})
                         db.add_documents(chunks)
-
                         self.store_collection_action(action, collection, action_type)
                 except Exception as e:
-                    print(f"Error loading document {state.path}: {e}")
-                    error = traceback.format_exc()
-                    print(error)
+                    logger.warning(f"Error loading document {state.path}: {e}")
+                    logger.warning(traceback.format_exc())
                     continue
             if deletes:
+                logger.debug(f"Deletes: {deletes}")
                 if action is None:
                     action = self.store_action(source, 0, state)
                 for collection in deletes:
                     db = get_vector_collection(self.config, collection)
-                    db.delete(where={"metadata": {"source": str(state.path)}})
+                    db.delete(where={"source": str(state.path)})
                     self.store_collection_action(action, collection, "delete")
 
     def store_source(self, path: Path) -> RagSource:
-        with open_sqlite_db(self.config.state_path / "state.db") as conn:
+        with self.open_db() as conn:
             sources = RagSource.select(conn, absolute_path=path)
             if len(sources) == 0:
                 source = RagSource(absolute_path=path)
                 source.save(conn)
+                conn.commit()
+                logger.debug(f"Stored source {source}")
                 return source
             else:
                 assert len(sources) == 1, f"Multiple sources for {path}"
+                logger.debug(f"Found source {sources[0]}")
                 return sources[0]
 
     def store_action(self, source: RagSource, n_chunks: int, state: FileState) -> RagAction:
-        with open_sqlite_db(self.config.state_path / "state.db") as conn:
+        with self.open_db() as conn:
             action = RagAction(
                 source_id=source.source_id,
                 timestamp=datetime.now(tz=UTC),
@@ -164,12 +179,14 @@ class Llore:
                 sha256=state.sha256(),
             )
             action.save(conn)
+            conn.commit()
+            logger.debug(f"Stored action {action}")
             return action
 
     def store_collection_action(
         self, action: RagAction, collection: str, action_type: ActionType
     ) -> RagActionCollection:
-        with open_sqlite_db(self.config.state_path / "state.db") as conn:
+        with self.open_db() as conn:
             collection_action = RagActionCollection(
                 action_id=action.action_id,
                 action=action_type,
@@ -177,6 +194,8 @@ class Llore:
                 timestamp=datetime.now(tz=UTC),
             )
             collection_action.insert(conn)
+            conn.commit()
+            logger.debug(f"Stored collection action {collection_action}")
             return collection_action
 
     def run(self):

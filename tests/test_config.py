@@ -2,8 +2,6 @@ import shutil
 from pathlib import Path
 from typing import NamedTuple
 
-import pytest
-
 from llamka.llore.config import BotConfig, Config, FileGlob, load_config
 
 
@@ -22,7 +20,6 @@ EnsureFile(Path("tests/config.json"), Path("data/")).ensure()
 EnsureFile(Path("tests/cryptoduck.json"), Path("data/bots/")).ensure()
 
 
-@pytest.mark.debug
 def test_config():
     config, bots = load_config("data/config.json")
     assert isinstance(config, Config)

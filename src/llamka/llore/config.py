@@ -68,7 +68,7 @@ class BotConfig(BaseModel):
     model: ModelParams
 
 
-def load_config(path: str) -> tuple[Config, list[BotConfig]]:
+def load_config(path: str | Path) -> tuple[Config, list[BotConfig]]:
     config = Config.model_validate_json(open(path).read())
     bots = [
         BotConfig.model_validate_json(open(f).read())

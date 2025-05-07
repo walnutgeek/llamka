@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
@@ -6,6 +7,19 @@ from pathlib import Path
 from typing import Any, Generic, NamedTuple, TypeVar, cast
 
 from pydantic import BaseModel
+
+logger = logging.getLogger("llore.state")
+
+
+def execute_sql(cursor: sqlite3.Cursor, sql: str, *args: Any):
+    logger.debug(f"execute: {sql}" + (f" -- with args: {args}" if len(args) > 0 else ""))
+    cursor.execute(sql, *args)
+
+
+def query_db(conn: sqlite3.Connection, sql: str, *args: Any) -> list[tuple[Any, ...]]:
+    cursor = conn.cursor()
+    execute_sql(cursor, sql, *args)
+    return cursor.fetchall()
 
 
 class TypeInfo(NamedTuple):
@@ -119,7 +133,8 @@ class DbModel(BaseModel, Generic[T]):
         cursor = conn.cursor()
         cls = self.__class__
         fields = list(cls.get_field_infos(lambda fi: not auto_increment or not fi.primary_key))
-        cursor.execute(
+        execute_sql(
+            cursor,
             f"INSERT INTO {cls.__name__} ({', '.join(map(lambda fi: fi.name, fields))}) "
             + f"VALUES ({', '.join(['?'] * len(fields))})",
             [fi.to_sql_value(self) for fi in fields],
@@ -151,7 +166,8 @@ class DbModel(BaseModel, Generic[T]):
             pks = list(cls.get_field_infos(lambda fi: fi.primary_key))  # pragma: no cover
         assert len(pks) > 0, f"Cannot update. No primary key found for {self.__class__.__name__}"
         non_pks = list(cls.get_field_infos(lambda fi: not fi.primary_key))
-        cursor.execute(
+        execute_sql(
+            cursor,
             f"UPDATE {self.__class__.__name__} "
             + f"SET {', '.join([f'{fi.name} = ?' for fi in non_pks])} "
             + f"WHERE {', '.join([f'{fi.name} = ?' for fi in pks])}",
@@ -165,7 +181,8 @@ class DbModel(BaseModel, Generic[T]):
         fields = list(cls.get_field_infos())
         assert len(pks) == 1
         cursor = conn.cursor()
-        cursor.execute(
+        execute_sql(
+            cursor,
             f"SELECT {', '.join([fi.name for fi in fields])} FROM {cls.__name__} "
             + f"WHERE {pks[0].name} = ?",
             [id],
@@ -189,7 +206,8 @@ class DbModel(BaseModel, Generic[T]):
             f"Known fields: {field_map.keys()}, but unknown filters: {unknown_filters.keys()}"
         )
         cursor = conn.cursor()
-        cursor.execute(
+        execute_sql(
+            cursor,
             f"SELECT {', '.join([fi.name for fi in fields])} FROM {cls.__name__} "
             + f"WHERE {' AND '.join([f'{k} = ?' for k in filters])}",
             [field_map[k].type_info.to_sql_fn(filters[k]) for k in filters],
@@ -240,6 +258,7 @@ def open_sqlite_db(db_name: str | Path):
     Yields:
         sqlite3.Connection: Database connection object
     """
+    logger.info(f"Opening database {db_name}")
     conn = sqlite3.connect(db_name)
     try:
         yield conn

@@ -39,6 +39,7 @@ classifiers = [
 
 dependencies = [
     "streamlit",
+    "scipy==1.14.1",
     "streamlit-chat",
     "pydantic",
     "typing-extensions",
@@ -48,6 +49,7 @@ dependencies = [
     "langchain-chroma",
     "langchain-huggingface",
     "sentence_transformers",
+    "transformers",
     "chromadb",
     "unstructured",
     "python-magic",

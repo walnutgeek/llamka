@@ -1,8 +1,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
-
 from llamka.llore.state import (
     FieldInfo,
     TypeInfo,
@@ -15,9 +13,9 @@ from llamka.llore.state.schema import (
     create_schema,
     select_all_active_sources,
 )
+from llamka.misc import delete_file_ensure_parent_dir
 
 
-@pytest.mark.debug
 def test_type_info():
     assert FieldInfo.build("timestamp", RagAction.model_fields["timestamp"]) == (
         "timestamp",
@@ -29,7 +27,6 @@ def test_type_info():
     )
 
 
-@pytest.mark.debug
 def test_dll():
     assert (
         RagAction.create_ddl()
@@ -42,19 +39,13 @@ def test_dll():
 
 
 # test db cleanup
-test_db_path = Path("build/tests/test.db")
-if test_db_path.exists():
-    test_db_path.unlink()
-if not test_db_path.parent.is_dir():
-    test_db_path.parent.mkdir(parents=True, exist_ok=True)
+test_db_path = delete_file_ensure_parent_dir(Path("build/tests/test.db"))
 
 
-@pytest.mark.debug
 def test_sqlite_db():
     create_schema(test_db_path)
 
 
-@pytest.mark.debug
 def test_add_attempt():
     with open_sqlite_db(test_db_path) as conn:
         select = select_all_active_sources(conn)
