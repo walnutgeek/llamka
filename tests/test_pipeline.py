@@ -17,7 +17,7 @@ pdf_path = Path("data/files")
 tst_pdfs = Path("tests/pdfs")
 
 
-@pytest.mark.debug
+@pytest.mark.slow
 def test_pipeline(caplog: pytest.LogCaptureFixture):
     s1_fragment, s1, s2 = (tst_pdfs / n for n in srcs)
     d1, d2 = (pdf_path / n for n in dsts)
@@ -37,10 +37,15 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
     core.process_files()
 
     with core.open_db() as conn:
-        assert query_db(
+        actual = query_db(
             conn,
             "select c.action_id, c.action, c.collection, a.sha256, a.error, a.n_chunks, s.source_id, s.absolute_path from RagActionCollection c, RagAction a, RagSource s Where s.source_id = a.source_id and a.action_id = c.action_id order by 1, 3",
-        ) == [
+        )
+        i = len(str(Path(".").absolute())) + 1
+        actual = [
+            (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7][i:]) for row in actual
+        ]
+        assert actual == [
             (
                 1,
                 "new",
@@ -49,7 +54,7 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
                 None,
                 41,
                 1,
-                "/Users/sergeyk/w/llamka/data/files/Crypto101.pdf",
+                "data/files/Crypto101.pdf",
             ),
             (
                 2,
@@ -59,7 +64,7 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
                 None,
                 419,
                 1,
-                "/Users/sergeyk/w/llamka/data/files/Crypto101.pdf",
+                "data/files/Crypto101.pdf",
             ),
             (
                 3,
@@ -69,7 +74,7 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
                 None,
                 863,
                 2,
-                "/Users/sergeyk/w/llamka/data/files/DuckDB_In_Action_Final_MotherDuck.pdf",
+                "data/files/DuckDB_In_Action_Final_MotherDuck.pdf",
             ),
             (
                 4,
@@ -79,7 +84,7 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
                 None,
                 0,
                 1,
-                "/Users/sergeyk/w/llamka/data/files/Crypto101.pdf",
+                "data/files/Crypto101.pdf",
             ),
             (
                 5,
@@ -89,9 +94,6 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
                 None,
                 0,
                 2,
-                "/Users/sergeyk/w/llamka/data/files/DuckDB_In_Action_Final_MotherDuck.pdf",
+                "data/files/DuckDB_In_Action_Final_MotherDuck.pdf",
             ),
         ]
-    # assert caplog.records[0].message == "Processing data/files/Crypto101_fragment.pdf"
-    # assert caplog.records[1].message == "Pending uploads: ['test']"
-    # assert caplog.records[2].message == "Deletes: ['test']"
