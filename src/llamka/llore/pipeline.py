@@ -90,14 +90,15 @@ class Llore:
         file_states = FileStates()
         for bot in self.bots:
             for glob in bot.files:
-                for file in glob.get_matching_files():
+                for file in sorted(glob.get_matching_files()):
                     fstate = file_states.add_file(file)
                     fstate.collections[bot.vector_db_collection] = FileTransition(None, True)
 
         with self.open_db() as conn:
             if not check_all_tables_exist(conn):
                 create_tables(conn)
-            latest = select_all_active_sources(conn)
+            latest = sorted(select_all_active_sources(conn), key=lambda s: s[0].absolute_path)
+
             if latest:
                 sources, actions, collections = zip(*latest, strict=False)
                 for i in range(len(sources)):
