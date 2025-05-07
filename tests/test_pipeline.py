@@ -43,7 +43,8 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
         )
         i = len(str(Path(".").absolute())) + 1
         actual = [
-            (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7][i:]) for row in actual
+            (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7][i:].replace("\\", "/"))
+            for row in actual
         ]
         assert actual == [
             (
