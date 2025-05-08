@@ -22,14 +22,32 @@ async def get_json(url: str) -> Any:
     return json.loads(response.body)
 
 
-class AppService:
+from typing import TypeVar
+
+StateType = TypeVar("StateType", bound="AppState")  # pyright: ignore [reportMissingTypeArgument]
+
+
+class AppService[StateType]:
     """Service that manages routes and periodic tasks for an app"""
+
+    app_state: StateType | None
+    app: "App | None"
 
     def __init__(self):
         self._routes: list[tuple[str, type[tornado.web.RequestHandler]]] = []
         self._periodic_tasks: list[PeriodicTask] = []
-        self.app_state: AppState | None = None
-        self.app: App | None = None
+        self.app_state = None
+        self.app = None
+
+    def get_app_state(self) -> StateType:
+        """Get the app state"""
+        assert self.app_state is not None, "App state is not set"
+        return self.app_state
+
+    def init_state(self, app_state: StateType, app: "App") -> None:
+        """Initialize the service"""
+        self.app_state = app_state
+        self.app = app
 
     def add_route(self, pattern: str, handler: type[tornado.web.RequestHandler]) -> None:
         """Add a route pattern and handler"""
@@ -113,7 +131,9 @@ BIND_ERRNO = _get_bind_errno()
 
 
 class AppState:
-    app_services: list[AppService]
+    """Base application state that maintains services"""
+
+    app_services: list[AppService]  # pyright: ignore [reportMissingTypeArgument]
     app: "App | None"
     port_seek: PortSeekStrategy
     port: int | None
@@ -121,7 +141,7 @@ class AppState:
 
     def __init__(
         self,
-        *app_services: AppService,
+        *app_services: AppService,  # pyright: ignore [reportUnknownParameterType, reportMissingTypeArgument]
         port: int | None = None,
         port_seek: PortSeekStrategy | None = None,
         debug: bool = False,
@@ -147,14 +167,14 @@ class AppState:
             yield from service.get_periodic_tasks()
 
     def listen(self, max_attempts: int = 10):
-        app = self.tornado_app()
+        tornado_app = self.tornado_app()
         reset_port = self.port is None
         for _ in range(max_attempts):
             if reset_port:
                 self.port = self.port_seek.next_port(self.port)
             try:
                 log.debug(f"Trying to listen on port {self.port}")
-                app.listen(cast(int, self.port))
+                tornado_app.listen(cast(int, self.port))
                 return
             except OSError as e:
                 if self.port_seek == PortSeekStrategy.BAILOUT or e.errno != BIND_ERRNO:
@@ -164,10 +184,13 @@ class AppState:
                     reset_port = True
         raise ValueError("Failed to find an available port after max_attempts", max_attempts)
 
+    def get_app(self) -> "App":
+        assert self.app is not None, "App is not set"
+        return self.app
+
     def on_start(self):
         for service in self.app_services:
-            service.app_state = self
-            service.app = self.app
+            service.init_state(self, self.get_app())
             service.on_start()
 
     def on_stop(self):

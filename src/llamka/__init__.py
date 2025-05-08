@@ -67,11 +67,10 @@ class GlobalRef:
         else:
             split = s.split(":")
             if len(split) == 1:
-                if not (split[0]):
-                    raise AssertionError(f"is {repr(s)} empty?")
+                assert bool(split[0]), f"is {repr(s)} empty?"
                 split.append("")
-            elif len(split) != 2:
-                raise AssertionError(f"too many ':' in: {repr(s)}")
+            else:
+                assert len(split) == 2, f"too many ':' in: {repr(s)}"
             self.module, self.name = split
 
     @override
@@ -102,8 +101,7 @@ class GlobalRef:
         return iscoroutinefunction(self.get_instance())
 
     def get_instance(self) -> Any:
-        if self.is_module():
-            raise AssertionError(f"{repr(self)}.get_module() only")
+        assert not self.is_module(), f"{repr(self)}.get_module() only"
         attr = getattr(self.get_module(), self.name)
         return attr
 
@@ -126,7 +124,7 @@ class Logic:
                 cls = ref.get_instance()
                 self.call = self.instance = cls(config)
             else:
-                raise AssertionError(f"Invalid logic {ref} in config {config}")
+                raise AssertionError(f"Invalid logic {ref} in config {config}")  # pragma: no cover
         except:
             log.error(f"Error in {config}")
             raise

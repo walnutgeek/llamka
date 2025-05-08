@@ -11,7 +11,7 @@ from typing_extensions import override
 from llamka.service import BIND_ERRNO, App, AppService, AppState, PortSeekStrategy, get_json
 
 
-class OkService(AppService):
+class OkService(AppService[AppState]):
     """A service that returns ok"""
 
     def __init__(self):
@@ -25,7 +25,7 @@ class OkService(AppService):
         self.add_route(r"/status", WorkerStatusHandler)
 
 
-class CheckOkService(AppService):
+class CheckOkService(AppService[AppState]):
     """A service that checks if the ok service is ok"""
 
     def __init__(self, *tasks: Callable[[], Any]):

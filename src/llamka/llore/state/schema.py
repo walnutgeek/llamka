@@ -1,16 +1,20 @@
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from llamka.llore.state import DbModel, execute_sql, from_multi_model_row, open_sqlite_db
 
 logger = logging.getLogger("llore.state.schema")
 
 ActionType = Literal["new", "update", "delete"]
+
+
+def utc_now():
+    return datetime.now(UTC)
 
 
 class RagSource(DbModel["RagSource"]):
@@ -23,7 +27,7 @@ class RagAction(DbModel["RagAction"]):
     source_id: int = Field(
         description="(FK:RagSource.source_id) Reference to the source being vectorized"
     )
-    timestamp: datetime = Field(description="When the attempt was made")
+    timestamp: datetime = Field(description="When the attempt was made", default_factory=utc_now)
     n_chunks: int = Field(description="Number of chunks created", ge=0)
     error: str | None = Field(default=None, description="Error message if vectorization failed")
     sha256: str = Field(description="SHA256 hash of the original file")
@@ -35,10 +39,37 @@ class RagActionCollection(DbModel["RagActionCollection"]):
     )
     action: ActionType = Field(description="Action taken on the source")
     collection: str = Field(description="Name of the collection the action was applied to")
-    timestamp: datetime = Field(description="When the attempt was made")
+    timestamp: datetime = Field(description="When the attempt was made", default_factory=utc_now)
 
 
-tables = [RagSource, RagAction, RagActionCollection]
+class ChatMessage(BaseModel):
+    role: Literal["system", "user", "assistant", "tool"] = Field(
+        description="The role in the conversation"
+    )
+    content: str = Field(description="The content of the message")
+    finish_reason: Literal["stop", "length", "content_filter", "null"] = Field(
+        default="null", description="The reason the conversation ended"
+    )
+
+
+class ConvoMessage(DbModel["ConvoMessage"], ChatMessage):
+    message_id: int = Field(default=-1, description="(PK) The message ID")
+    session_id: int = Field(default=-1, description="(FK:ConvoSession.session_id) The session ID")
+    captured: datetime = Field(default_factory=utc_now)
+
+
+class ConvoSession(DbModel["ConvoSession"]):
+    session_id: int = Field(default=-1, description="(PK) The session ID")
+    created: datetime = Field(default_factory=utc_now)
+    updated: datetime = Field(default_factory=utc_now)
+    model: str = Field(description="The model id used for the chat session to answer questions")
+    user_id: str | None = Field(
+        default=None, description="The user ID of the user who created the session"
+    )
+    session_type: Literal["active", "completed", "failed", "archived"] = "active"
+
+
+tables = [RagSource, RagAction, RagActionCollection, ConvoMessage, ConvoSession]
 
 
 def check_all_tables_exist(conn: sqlite3.Connection):

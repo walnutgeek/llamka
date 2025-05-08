@@ -13,7 +13,7 @@ async def check_on_vectorization_sources():
     print("Checking on vectorization sources")
 
 
-class OkService(AppService):
+class OkService(AppService[AppState]):
     """A service that returns ok"""
 
     def __init__(self):

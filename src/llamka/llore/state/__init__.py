@@ -51,7 +51,7 @@ class FieldInfo(NamedTuple):
             if hasattr(field_info.annotation, "__name__")
             else str(field_info.annotation)
         )
-        description = field_info.description
+        description = field_info.description or ""
         is_nullable = type_name.endswith("| None")
         if is_nullable:
             type_name = type_name[:-6].strip()

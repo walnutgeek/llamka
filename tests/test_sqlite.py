@@ -1,5 +1,9 @@
+import logging
+from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
+
+import pytest
 
 from llamka.llore.state import (
     FieldInfo,
@@ -42,8 +46,26 @@ def test_dll():
 test_db_path = delete_file_ensure_parent_dir(Path("build/tests/test.db"))
 
 
-def test_sqlite_db():
+def search_caplog(caplog: pytest.LogCaptureFixture, prefix: str) -> Generator[str, None, None]:
+    for r in caplog.records:
+        m = r.getMessage()
+        if m.startswith(prefix):
+            yield m[len(prefix) :]
+
+
+@pytest.mark.debug
+def test_sqlite_db(caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
     create_schema(test_db_path)
+    extract = tuple(search_caplog(caplog, "execute: "))
+    print(extract)
+    assert extract == (
+        "CREATE TABLE RagSource (source_id INTEGER PRIMARY KEY, absolute_path TEXT)",
+        "CREATE TABLE RagAction (action_id INTEGER PRIMARY KEY, source_id INTEGER REFERENCES RagSource(source_id), timestamp TEXT, n_chunks INTEGER, error TEXT NULL, sha256 TEXT)",
+        "CREATE TABLE RagActionCollection (action_id INTEGER REFERENCES RagAction(action_id), action TEXT, collection TEXT, timestamp TEXT)",
+        "CREATE TABLE ConvoMessage (role TEXT, content TEXT, finish_reason TEXT, message_id INTEGER PRIMARY KEY, session_id INTEGER REFERENCES ConvoSession(session_id), captured TEXT)",
+        "CREATE TABLE ConvoSession (session_id INTEGER PRIMARY KEY, created TEXT, updated TEXT, model TEXT, user_id TEXT NULL, session_type TEXT)",
+    )
 
 
 def test_add_attempt():
@@ -60,7 +82,6 @@ def test_add_attempt():
         assert isinstance(s_loaded.absolute_path, Path)
         a1 = RagAction(
             source_id=s.source_id,
-            timestamp=datetime.now(tz=UTC),
             n_chunks=1,
             error=None,
             sha256="1234567890",
@@ -73,13 +94,11 @@ def test_add_attempt():
             action_id=a1.action_id,
             action="new",
             collection="test",
-            timestamp=datetime.now(tz=UTC),
         )
         c1.insert(conn)
 
         a2 = RagAction(
             source_id=s.source_id,
-            timestamp=datetime.now(tz=UTC),
             n_chunks=1,
             error=None,
             sha256="6789012345",
@@ -93,7 +112,6 @@ def test_add_attempt():
             action_id=a2.action_id,
             action="new",
             collection="test",
-            timestamp=datetime.now(tz=UTC),
         )
         c2.insert(conn)
 
@@ -111,7 +129,6 @@ def test_add_attempt():
         a3 = RagAction(
             action_id=6,
             source_id=s.source_id,
-            timestamp=datetime.now(tz=UTC),
             n_chunks=6,
             error=None,
             sha256="1122334455",
@@ -122,7 +139,6 @@ def test_add_attempt():
             action_id=a3.action_id,
             action="update",
             collection="test",
-            timestamp=datetime.now(tz=UTC),
         )
         c3.insert(conn)
 
@@ -130,7 +146,6 @@ def test_add_attempt():
             action_id=a3.action_id,
             action="new",
             collection="test2",
-            timestamp=datetime.now(tz=UTC),
         )
         c4.insert(conn)
 
