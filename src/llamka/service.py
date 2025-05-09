@@ -5,7 +5,7 @@ import platform
 import signal
 from collections.abc import Callable, Generator
 from enum import Enum
-from typing import Any, Generic, cast
+from typing import Any, Generic, TypeVar, cast
 
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
@@ -21,8 +21,6 @@ async def get_json(url: str) -> Any:
     response = await AsyncHTTPClient().fetch(url)
     return json.loads(response.body)
 
-
-from typing import TypeVar
 
 StateType = TypeVar("StateType", bound="AppState")  # pyright: ignore [reportMissingTypeArgument]
 
