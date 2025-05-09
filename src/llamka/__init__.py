@@ -145,6 +145,13 @@ def get_module(name: str) -> ModuleType:
 
 
 def str_or_none(s: Any) -> str | None:
+    """
+    >>> str_or_none(None)
+    >>> str_or_none(5)
+    '5'
+    >>> str_or_none('')
+    ''
+    """
     return str(s) if s is not None else None
 
 

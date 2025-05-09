@@ -5,7 +5,7 @@ import platform
 import signal
 from collections.abc import Callable, Generator
 from enum import Enum
-from typing import Any, cast
+from typing import Any, Generic, cast
 
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
@@ -27,7 +27,7 @@ from typing import TypeVar
 StateType = TypeVar("StateType", bound="AppState")  # pyright: ignore [reportMissingTypeArgument]
 
 
-class AppService[StateType]:
+class AppService(Generic[StateType]):
     """Service that manages routes and periodic tasks for an app"""
 
     app_state: StateType | None
