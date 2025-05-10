@@ -46,18 +46,21 @@ def test_dll():
 test_db_path = delete_file_ensure_parent_dir(Path("build/tests/test.db"))
 
 
-def search_caplog(caplog: pytest.LogCaptureFixture, prefix: str) -> Generator[str, None, None]:
+def search_caplog(
+    caplog: pytest.LogCaptureFixture, prefix: str, category: str | None = None
+) -> Generator[str, None, None]:
     for r in caplog.records:
         m = r.getMessage()
-        if m.startswith(prefix):
-            yield m[len(prefix) :]
+        if category is None or r.name == category:
+            if m.startswith(prefix):
+                yield m[len(prefix) :]
 
 
 @pytest.mark.debug
 def test_sqlite_db(caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
     create_schema(test_db_path)
-    extract = tuple(search_caplog(caplog, "execute: "))
+    extract = tuple(search_caplog(caplog, "execute: ", category="llore.state"))
     print(extract)
     assert extract == (
         "CREATE TABLE RagSource (source_id INTEGER PRIMARY KEY, absolute_path TEXT)",

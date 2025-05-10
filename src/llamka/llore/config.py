@@ -30,15 +30,13 @@ class EmbeddingModel(BaseModel):
     model_name: str
     model_params: dict[str, Any]
     encode_params: dict[str, Any]
+    cache_model: bool = Field(default=True)
+    cache_path: Path | None = Field(default=None)
 
 
 class VectorDb(BaseModel):
     dir: Path
     embeddings: EmbeddingModel
-
-    def ensure_dir(self):
-        self.dir.mkdir(parents=True, exist_ok=True)
-        return str(self.dir)
 
 
 class FileGlob(BaseModel):
@@ -52,6 +50,7 @@ class FileGlob(BaseModel):
 class Config(BaseModel):
     bots: FileGlob
     state_path: Path
+    hf_hub_dir: Path
     vector_db: VectorDb
     llm_models: dict[str, LLMModel]
 

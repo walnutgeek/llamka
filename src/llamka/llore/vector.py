@@ -1,10 +1,6 @@
-# TODO: implement vectorization of documents using croma db and langchain.
-# Obtain list of files from config.
-# For each file, extract the text according and vectorize it using langchain.
-# Store the vectorized text in a croma db persidted in the data/chroma directory.
-
+import logging
 import os
-import sys
+from collections.abc import Generator
 from pathlib import Path
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -12,9 +8,12 @@ from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from llamka.llore.config import Config, load_config
+from llamka.llore.config import Config
+from llamka.misc import ensure_dir
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+logger = logging.getLogger(__name__)
 
 
 def get_document_loader(file_path: Path):
@@ -25,18 +24,45 @@ def get_document_loader(file_path: Path):
         raise ValueError(f"Unsupported file type: {file_path.suffix}")
 
 
-def get_vector_collection(config: Config, collection: str) -> Chroma:
-    vector_db = config.vector_db
-    embeddings = HuggingFaceEmbeddings(
-        model_name=vector_db.embeddings.model_name,  # "all-MiniLM-L6-v2",
-        model_kwargs=vector_db.embeddings.model_params,  # {'device': 'cpu'},
-        encode_kwargs=vector_db.embeddings.encode_params,  # {'normalize_embeddings': True}
-    )
+def gen_matching_snapshots(cache_dir: Path, model_name: str) -> Generator[str, None, None]:
+    for model_dir in cache_dir.glob(f"*{model_name}"):
+        if (model_dir / "snapshots").is_dir():
+            for snapshot_dir in model_dir.glob("snapshots/*"):
+                if snapshot_dir.is_dir() and len(snapshot_dir.name) == 40:
+                    yield f"{model_dir.name}/snapshots/{snapshot_dir.name}"
 
-    # Initialize ChromaDB
+
+def get_vector_collection(config: Config, collection: str) -> Chroma:
+    db_cfg = config.vector_db
+    emb_cfg = db_cfg.embeddings
+
+    def load_embeddings(name: str = emb_cfg.model_name) -> HuggingFaceEmbeddings:
+        return HuggingFaceEmbeddings(
+            model_name=name,  # "all-MiniLM-L6-v2",
+            model_kwargs=emb_cfg.model_params,  # {'device': 'cpu'},
+            encode_kwargs=emb_cfg.encode_params,  # {'normalize_embeddings': True}
+        )
+
+    if emb_cfg.cache_model:
+        os.environ["SENTENCE_TRANSFORMERS_HOME"] = str(ensure_dir(config.hf_hub_dir).absolute())
+        if emb_cfg.cache_path is None:
+            embeddings = load_embeddings()
+        else:
+            try:
+                resolved_path = config.hf_hub_dir / emb_cfg.cache_path
+                if not resolved_path.is_dir():
+                    raise FileNotFoundError(
+                        f"Cache path {resolved_path} not found. Possible options: {list(gen_matching_snapshots(config.hf_hub_dir, emb_cfg.model_name))}"
+                    )
+                embeddings = load_embeddings(str(config.hf_hub_dir / emb_cfg.cache_path))
+            except Exception as e:
+                logger.error(f"Error loading embeddings from cache: {e}")
+                logger.info(f"Loading embeddings from hf site: {emb_cfg.model_name}")
+                embeddings = load_embeddings()
+
     return Chroma(
-        persist_directory=vector_db.ensure_dir(),
-        embedding_function=embeddings,
+        persist_directory=str(ensure_dir(db_cfg.dir)),
+        embedding_function=embeddings,  # pyright: ignore[reportPossiblyUnboundVariable]
         collection_name=collection,
     )
 
@@ -50,35 +76,3 @@ def load_document_into_chunks(file_path: Path):
     )
     splits = text_splitter.split_documents(documents)
     return splits
-
-
-def run_proximity_search(query: str, k: int = 4) -> list[str]:
-    """
-    Run a proximity search against the vector database.
-
-    Args:
-        query: The search query text
-        k: Number of results to return (default 4)
-
-    Returns:
-        List of relevant document content strings
-    """
-    config, _ = load_config("data/config.json")
-    # Initialize embeddings and ChromaDB with same settings
-    db = get_vector_collection(config, "documents")
-
-    # Run similarity search
-    results = db.similarity_search(query, k=k)
-
-    # Extract and return the content from results
-    return [doc.page_content for doc in results]
-
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        rr = run_proximity_search(" ".join(sys.argv[1:]), 5)
-        for r in rr:
-            print("-" * 10)
-            print(r)
-    else:
-        print("No query provided")

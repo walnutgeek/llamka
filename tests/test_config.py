@@ -1,23 +1,25 @@
-import shutil
-from pathlib import Path
-from typing import NamedTuple
+from typing import Any
 
 from llamka.llore.config import BotConfig, Config, FileGlob, load_config
+from llamka.misc import EnsureJson
 
 
-class EnsureFile(NamedTuple):
-    src: Path
-    target_dir: Path
+def sanitize_api_key(o: Any) -> Any:
+    if isinstance(o, list):
+        return list(map(sanitize_api_key, o))
+    elif isinstance(o, dict):
+        dd = {}
+        for k, v in o.items():
+            if k == "api_key":
+                v = f"{v[:3]}..."
+            dd[k] = sanitize_api_key(v)
+        return dd
+    else:
+        return o
 
-    def ensure(self):
-        target = self.target_dir / self.src.name
-        if not target.exists():
-            self.target_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(self.src, target)
 
-
-EnsureFile(Path("tests/config.json"), Path("data/")).ensure()
-EnsureFile(Path("tests/cryptoduck.json"), Path("data/bots/")).ensure()
+EnsureJson("config.json", "tests/", "data/", sanitize_api_key).forward().backward()
+EnsureJson("cryptoduck.json", "tests/", "data/bots/", None).forward().backward()
 
 
 def test_config():

@@ -76,6 +76,9 @@ class FileStates:
         return self.states[path]
 
 
+# TODO: langchain pipeline
+
+
 class Llore:
     config: Config
     bots: list[BotConfig]
