@@ -30,6 +30,7 @@ def test_file_state():
         "DuckDB_In_Action_Final_MotherDuck.pdf": "9b20019b9d4ff021ba9e8eef79dcc935bf71ee92b3c94b21d81126723e6620c5",
     }
 
+
 @pytest.mark.slow
 def test_pipeline(caplog: pytest.LogCaptureFixture):
     s1_fragment, s1, s2 = (tst_pdfs / n for n in srcs)
