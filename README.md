@@ -21,25 +21,25 @@ There is few principles we want to build llamka around
 
 * llore - (llamka-core) Tornado App that keep everything running. llore provides api and all other services built on top of it
     * MVP
-        [x] provide abstraction interface over LLM providers (local: ollama;  remote: openai,  claude;)
-        [x] maintain external document locations/versions and rebuild vector db collections on changes
-        [ ] augmentation pipelines and chatbot config
-        [ ] completion api to interact with configured models and chatbots
+        - [x] provide abstraction interface over LLM providers (local: ollama;  remote: openai,  claude;)
+        - [x] maintain external document locations/versions and rebuild vector db collections on changes
+        - [ ] augmentation pipelines and chatbot config
+        - [ ] completion api to interact with configured models and chatbots
     * later
-        [ ] store chatbot interactions in oumi conversation format per user if instructed
-        [ ] maintain chatbot library (includes: system prompt, finetuning and augmentation pipelines, data dependencies, and build schedule)
-        [ ] maintain conversation datasets and use them for tuning, RAG and testing
-        [ ] schedule and run pipelines: finetuning, RAG, chatbot evaluation 
-        [ ] monitor and run services: databases, queues, proxies, ui (llit)
+        - [ ] store chatbot interactions in oumi conversation format per user if instructed
+        - [ ] maintain chatbot library (includes: system prompt, finetuning and augmentation pipelines, data dependencies, and build schedule)
+        - [ ] maintain conversation datasets and use them for tuning, RAG and testing
+        - [ ] schedule and run pipelines: finetuning, RAG, chatbot evaluation 
+        - [ ] monitor and run services: databases, queues, proxies, ui (llit)
 
 * llit - streamlit UI 
     * MVP
-        [ ] Chatbot interaction 
+        - [ ] Chatbot interaction 
     * later
-        [ ] Inspect previous conversations or from library
-        [ ] Inspect data: sql, document db, vector db
-        [ ] Inspect logs from pipelines
-        [ ] Configuration: models, chatbot, pipelines
+        - [ ] Inspect previous conversations or from library
+        - [ ] Inspect data: sql, document db, vector db
+        - [ ] Inspect logs from pipelines
+        - [ ] Configuration: models, chatbot, pipelines
 
 
 
