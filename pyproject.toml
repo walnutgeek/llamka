@@ -65,6 +65,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "watchdog",
+    "jupyter",
+    "langgraph",
     "pytest>=8.3.5",
     "ruff>=0.11.7",
     "codespell>=2.4.1",
@@ -197,3 +199,5 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "debug: marks tests for debugging (select with '-m debug')",
 ]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
