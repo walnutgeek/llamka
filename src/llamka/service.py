@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, Generic, TypeVar, cast
 
 import tornado.web
-from tornado.httpclient import AsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from typing_extensions import override
 
 from llamka import random_port
@@ -17,9 +17,12 @@ from llamka.periodic import PeriodicTask, run_all
 log = logging.getLogger(__name__)
 
 
-async def get_json(url: str) -> Any:
+async def get_json(
+    url: str | HTTPRequest, to_json: Callable[[str | bytes | bytearray], Any] = json.loads
+) -> Any:
     response = await AsyncHTTPClient().fetch(url)
-    return json.loads(response.body)
+    log.debug(f"Response: {response.body}")
+    return to_json(response.body)
 
 
 StateType = TypeVar("StateType", bound="AppState")  # pyright: ignore [reportMissingTypeArgument]

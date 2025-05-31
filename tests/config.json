@@ -26,23 +26,36 @@
             "stream": false,
             "api_key": "sk-..."
         },
+        "sonnet": {
+            "model_name": "claude-3-7-sonnet-20250219",
+            "url": "https://api.anthropic.com/v1/messages",
+            "context_window": 128000,
+            "stream": false,
+            "headers": {
+                "anthropic-version": "2023-06-01",
+                "x-api-key": "sk-..."
+            },
+            "params": {
+                "max_tokens": 1024
+            }
+        },
         "phi4": {
             "model_name": "phi4:latest",
             "context_window": 16384,
             "stream": false,
-            "url": "http://localhost:11434/api/generate"
+            "url": "http://localhost:11434/api/chat"
         },
         "llama3.2": {
             "model_name": "llama3.2:latest",
             "context_window": 131072,
             "stream": false,
-            "url": "http://localhost:11434/api/generate"
+            "url": "http://localhost:11434/api/chat"
         },
         "mistral": {
             "model_name": "mistral:latest",
             "context_window": 32768,
             "stream": false,
-            "url": "http://localhost:11434/api/generate"
+            "url": "http://localhost:11434/api/chat"
         }
     }
 }

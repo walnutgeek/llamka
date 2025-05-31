@@ -3,22 +3,15 @@ import logging
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.outputs import ChatResult
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from typing_extensions import override
 
 from llamka.llore.config import BotConfig, Config, load_config
+from llamka.llore.llm import base_message_to_dict, response_to_chat_result
 from llamka.llore.state import open_sqlite_db
 from llamka.llore.state.schema import (
     ActionType,
-    ChatMessage,
     RagAction,
     RagActionCollection,
     RagSource,
@@ -90,71 +83,53 @@ class FileStates:
 # TODO: langchain pipeline
 
 
-class CustomChatModel(BaseChatModel):
-    llore: "Llore"
-    bot_name: str
-    bot_cfg: BotConfig
-
-    def __init__(self, llore: "Llore", bot_name: str):
-        super().__init__()
-        self.bot_name = bot_name
-        self.llore = llore
-        self.bot_cfg = llore.bots[bot_name]
-
-    @override
-    def _generate(
-        self,
-        messages: list[BaseMessage],
-        stop: list[str] | None = None,
-        run_manager: CallbackManagerForLLMRun | None = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        assert run_manager is None, "run_manager is not supported"
-        # Implement your chat model logic here
-        # Return an AIMessage with the response
-        return ChatResult(generations=[])
-
-    @property
-    @override
-    def _llm_type(self) -> str:
-        return "custom_chat_model"
-
-
 class Llore:
+    root: Path | None
     config: Config
     bots: dict[str, BotConfig]
 
-    def __init__(self, config_path: str | Path = "data/config.json"):
-        self.config, bots = load_config(config_path)
+    def __init__(
+        self, config_path: str | Path = "data/config.json", root: str | Path | None = None
+    ):
+        self.root, self.config, bots = load_config(config_path, root)
         self.bots = {b.name: b for b in bots}
+
+    async def query_llm(self, llm_name: str, messages: list[BaseMessage]) -> ChatResult:
+        llm = self.config.llm_models[llm_name]
+        return response_to_chat_result(await llm.query(list(map(base_message_to_dict, messages))))
+
+    async def query_bot(self, bot_name: str, messages: list[BaseMessage]) -> ChatResult:
+        llm_name = self.bots[bot_name].model.name
+        return await self.query_llm(llm_name, messages)
 
     def open_db(self):
         return open_sqlite_db(self.config.state_path / "state.db")
 
-    def ask_bot(self, bot_name: str, content: list[ChatMessage]):
-        bot_cfg = self.bots[bot_name]
+    #     async def ask_bot(
+    #         self, bot_name: str, question: str, previous_messages: list[ChatMessage] | None = None
+    #     ) -> ChatResult:
+    #         if previous_messages is None:
+    #             previous_messages = []
+    #         bot_cfg = self.bots[bot_name]
 
-        db = get_vector_collection(self.config, bot_cfg.vector_db_collection)
+    #         db = get_vector_collection(self.config, bot_cfg.vector_db_collection)
 
-        model = CustomChatModel(self, bot_name)
+    #         retriever = db.as_retriever()
+    #         template = """Answer the question based only on the following context:
+    # {context}
 
-        retriever = db.as_retriever()
-        template = """Answer the question based only on the following context:
-{context}
+    # Please provide document name and page numbers as reference.
 
-Please provide document name and page numbers as reference.
+    # Question: {question}
+    # """
+    #         prompt = ChatPromptTemplate.from_template(template)
 
-Question: {question}
-"""
-        prompt = ChatPromptTemplate.from_template(template)
-
-        retrieval_chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | prompt
-            | model
-            | StrOutputParser()
-        )
-        return retrieval_chain.invoke(content[0].content)
+    #         retrieval_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt
+    #         message = await retrieval_chain.ainvoke(question)
+    #         model = BotChatModel(self, bot_name)
+    #         return await model.agenerate(
+    #             messages=[*previous_messages, BaseMessage(content=message, type="user")]
+    #         )
 
     def process_files(self):
         file_states = FileStates()

@@ -20,7 +20,6 @@ pdf_path = Path("data/files")
 tst_pdfs = Path("tests/pdfs")
 
 
-@pytest.mark.debug
 def test_file_state():
     ff = {f.name: FileState(f).sha256() for f in sorted(tst_pdfs.iterdir())}
     print(ff)
@@ -116,7 +115,6 @@ def test_pipeline(caplog: pytest.LogCaptureFixture):
             assert a == e
 
 
-@pytest.mark.debug
 def test_vector_db(caplog: pytest.LogCaptureFixture):
     core = Llore()
     caplog.set_level(logging.DEBUG)
@@ -125,7 +123,6 @@ def test_vector_db(caplog: pytest.LogCaptureFixture):
     assert "urllib3.connectionpool" not in categories
 
 
-@pytest.mark.debug
 def test_snapshot_cache():
     cfg: Config = Llore().config
 
