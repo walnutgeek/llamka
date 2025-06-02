@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 from tornado.httpclient import HTTPRequest
 
+from llamka.llore.utils import get_adjust_to_root_modifier, modify_path_attributes
 from llamka.service import get_json
 
 log = logging.getLogger(__name__)
@@ -81,9 +82,8 @@ class FileGlob(BaseModel):
     dir: Path
     glob: str
 
-    def get_matching_files(self, root: Path | None = None) -> list[Path]:
-        dir = root / self.dir if root is not None else self.dir
-        return list(dir.glob(self.glob))
+    def get_matching_files(self) -> list[Path]:
+        return list(self.dir.glob(self.glob))
 
 
 class Config(BaseModel):
@@ -99,23 +99,28 @@ class ModelParams(BaseModel):
     params: dict[str, Any]
 
 
-class BotConfig(BaseModel):
-    name: str
+class RagConfig(BaseModel):
     files: list[FileGlob]
     vector_db_collection: str
+
+
+class BotConfig(BaseModel):
+    name: str
     model: ModelParams
+    rag: RagConfig | None = Field(default=None)
 
 
 def load_config(
     path: str | Path, root: str | Path | None = None
 ) -> tuple[Path | None, Config, list[BotConfig]]:
-    if root is None:
-        path = Path(path)
-    else:
-        root = Path(root).absolute()
-        path = root / path
+    root = Path(root).absolute() if root is not None else None
+    path_modifier = get_adjust_to_root_modifier(root)
+    path = path_modifier(Path(path))
     config = Config.model_validate_json(path.read_text())
-    bots = [
-        BotConfig.model_validate_json(f.read_text()) for f in config.bots.get_matching_files(root)
-    ]
+    modify_path_attributes(config, path_modifier)
+    bots: list[BotConfig] = []
+    for f in config.bots.get_matching_files():
+        bot = BotConfig.model_validate_json(f.read_text())
+        modify_path_attributes(bot, path_modifier)
+        bots.append(bot)
     return root, config, bots

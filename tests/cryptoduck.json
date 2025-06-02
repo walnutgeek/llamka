@@ -1,12 +1,14 @@
 {
     "name": "cryptoduck",
-    "files": [
-        {
-            "dir": "data/files/",
-            "glob": "*.pdf"
-        }
-    ],
-    "vector_db_collection": "documents",
+    "rag": {
+        "files": [
+            {
+                "dir": "data/files/",
+                "glob": "*.pdf"
+            }
+        ],
+        "vector_db_collection": "documents"
+    },
     "model": {
         "name": "4o",
         "params": {

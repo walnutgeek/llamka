@@ -102,8 +102,13 @@ class Llore:
         llm_name = self.bots[bot_name].model.name
         return await self.query_llm(llm_name, messages)
 
+    def adjust_path(self, path: Path) -> Path:
+        if self.root is not None:
+            return self.root / path
+        return path
+
     def open_db(self):
-        return open_sqlite_db(self.config.state_path / "state.db")
+        return open_sqlite_db(self.adjust_path(self.config.state_path / "state.db"))
 
     #     async def ask_bot(
     #         self, bot_name: str, question: str, previous_messages: list[ChatMessage] | None = None
@@ -134,10 +139,12 @@ class Llore:
     def process_files(self):
         file_states = FileStates()
         for bot in self.bots.values():
-            for glob in bot.files:
+            if bot.rag is None:
+                continue
+            for glob in bot.rag.files:
                 for file in sorted(glob.get_matching_files()):
                     fstate = file_states.add_file(file)
-                    fstate.collections[bot.vector_db_collection] = FileTransition(None, True)
+                    fstate.collections[bot.rag.vector_db_collection] = FileTransition(None, True)
 
         with self.open_db() as conn:
             if not check_all_tables_exist(conn):
