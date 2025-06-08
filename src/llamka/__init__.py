@@ -1,7 +1,9 @@
 import base64
 import json
 import logging
+import random
 import sys
+import time
 from inspect import isclass, iscoroutinefunction, isfunction, ismodule
 from types import ModuleType
 from typing import Any, Self, final
@@ -172,18 +174,13 @@ class JsonBase(BaseModel):
         return base64.b64encode(self.model_dump_json().encode("utf8"))
 
 
-import random
-import time
-from base64 import b64decode, b64encode
-
-
 def encode_base64(bb: bytes) -> str:
-    return b64encode(bb).decode()
+    return base64.b64encode(bb).decode()
 
 
 def ensure_bytes(input: str | bytes) -> bytes:
     if isinstance(input, str):
-        input = b64decode(input)
+        input = base64.b64decode(input)
     return input
 
 

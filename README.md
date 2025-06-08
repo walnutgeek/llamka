@@ -24,7 +24,7 @@ There is few principles we want to build llamka around
         - [x] provide abstraction interface over LLM providers (local: ollama;  remote: openai,  claude;)
         - [x] maintain external document locations/versions and rebuild vector db collections on changes
         - [ ] augmentation pipelines and chatbot config
-        - [ ] completion api to interact with configured models and chatbots
+        - [x] completion api to interact with configured models and chatbots
     * later
         - [ ] store chatbot interactions in oumi conversation format per user if instructed
         - [ ] maintain chatbot library (includes: system prompt, finetuning and augmentation pipelines, data dependencies, and build schedule)
@@ -34,7 +34,7 @@ There is few principles we want to build llamka around
 
 * llit - streamlit UI 
     * MVP
-        - [ ] Chatbot interaction 
+        - [x] Chatbot interaction 
     * later
         - [ ] Inspect previous conversations or from library
         - [ ] Inspect data: sql, document db, vector db
@@ -42,6 +42,9 @@ There is few principles we want to build llamka around
         - [ ] Configuration: models, chatbot, pipelines
 
 
+Got API and streamlit endpoints working, almost MVP!!!
+
+![Screenshot_2025-06-08](Screenshot_2025-06-08.png)
 
 
 

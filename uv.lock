@@ -1992,7 +1992,7 @@ requires-dist = [
     { name = "python-magic" },
     { name = "scipy", specifier = "==1.14.1" },
     { name = "sentence-transformers" },
-    { name = "streamlit" },
+    { name = "streamlit", specifier = ">=1.32.0" },
     { name = "streamlit-chat" },
     { name = "transformers" },
     { name = "typing-extensions" },

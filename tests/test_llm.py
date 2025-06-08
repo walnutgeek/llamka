@@ -1,7 +1,6 @@
 import pytest
-from langchain_core.messages import ChatMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
 
+from llamka.llore.api import ChatResponse
 from llamka.llore.llm import response_to_chat_result
 
 responses = {}
@@ -118,10 +117,8 @@ def test_response_to_chat_result():
         print(f"==== {k} ====")
         r = response_to_chat_result(resp)
         print(r)
-        assert type(r) is ChatResult
-        gen: ChatGeneration = r.generations[0]
-        assert isinstance(gen.message, ChatMessage)
-        msg: ChatMessage = gen.message
+        assert type(r) is ChatResponse
+        msg = r.generation
         assert msg.role == "assistant"
         assert isinstance(msg.content, str)
         assert msg.content.strip().startswith("The sky appears blue ")

@@ -4,11 +4,9 @@ import traceback
 from datetime import UTC, datetime
 from pathlib import Path
 
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
-
+from llamka.llore.api import ChatMsg, ChatResponse, Models
 from llamka.llore.config import BotConfig, Config, load_config
-from llamka.llore.llm import base_message_to_dict, response_to_chat_result
+from llamka.llore.llm import response_to_chat_result
 from llamka.llore.state import open_sqlite_db
 from llamka.llore.state.schema import (
     ActionType,
@@ -94,13 +92,25 @@ class Llore:
         self.root, self.config, bots = load_config(config_path, root)
         self.bots = {b.name: b for b in bots}
 
-    async def query_llm(self, llm_name: str, messages: list[BaseMessage]) -> ChatResult:
+    async def query_llm(self, llm_name: str, messages: list[ChatMsg]) -> ChatResponse:
         llm = self.config.llm_models[llm_name]
-        return response_to_chat_result(await llm.query(list(map(base_message_to_dict, messages))))
+        return response_to_chat_result(await llm.query([m.to_output_dict() for m in messages]))
 
-    async def query_bot(self, bot_name: str, messages: list[BaseMessage]) -> ChatResult:
-        llm_name = self.bots[bot_name].model.name
+    async def query_bot(
+        self, bot_name: str, messages: list[ChatMsg], llm_name: str | None = None
+    ) -> ChatResponse:
+        if llm_name is None:
+            llm_name = self.bots[bot_name].model.name
+        # for m in messages:
+        #     if self.tool_map.has_tool(m):
+
+        #         tool_name = m.role[:-5]
+        #         await self.tool_message(tool_name, m)
+        #         m = update_tooled_messages(m, tool_name)
         return await self.query_llm(llm_name, messages)
+
+    def get_models(self) -> Models:
+        return Models(llms=list(self.config.llm_models.keys()), bots=list(self.bots.keys()))
 
     def adjust_path(self, path: Path) -> Path:
         if self.root is not None:

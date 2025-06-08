@@ -43,6 +43,7 @@ class LLMModelConfig(BaseModel):
         self,
         messages: list[dict[str, Any]],
         to_json: Callable[[Any], Any] = json.loads,
+        request_timeout: float = 100,
     ) -> Any:
         req_body: dict[str, Any] = {
             "model": self.model_name,
@@ -51,7 +52,7 @@ class LLMModelConfig(BaseModel):
         if self.params:
             req_body.update(self.params)
         req_body["stream"] = self.stream
-        log.warning(f"Request body: {req_body}")
+        log.debug(f"Request body: {req_body}")
         headers = {}
         if self.headers:
             headers.update(self.headers)
@@ -61,7 +62,13 @@ class LLMModelConfig(BaseModel):
             headers["Authorization"] = f"Basic {self.basic_auth.encode()}"
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
-        req = HTTPRequest(url=self.url, method="POST", body=json.dumps(req_body), headers=headers)
+        req = HTTPRequest(
+            url=self.url,
+            method="POST",
+            body=json.dumps(req_body),
+            headers=headers,
+            request_timeout=request_timeout,
+        )
         return await get_json(req, to_json=to_json)
 
 

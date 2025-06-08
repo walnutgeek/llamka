@@ -38,7 +38,7 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
-    "streamlit",
+    "streamlit>=1.32.0",
     "numpy==2.1.0",
     "scipy==1.14.1",
     "streamlit-chat",
@@ -82,6 +82,7 @@ dev = [
 [project.scripts]
 # Add script entry points here:
 llamka = "llamka.llore.server:run_server"
+llit = "llamka.llit:main"
 
 # ---- Build system ----
 
@@ -193,7 +194,7 @@ testpaths = [
     "src",
     "tests",
 ]
-norecursedirs = []
+norecursedirs = ["src/llamka/llit_app"]
 filterwarnings = []
 addopts = ["--doctest-modules", "--cov=src", "--cov-report=term-missing", "--cov-report=xml:cov.xml"]
 markers = [

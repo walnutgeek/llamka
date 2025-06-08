@@ -1,16 +1,36 @@
+import logging
+from abc import ABCMeta, abstractmethod
+from collections.abc import Callable, Generator
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar
 
-from langchain_core.messages import BaseMessage, ChatMessage
-from langchain_core.outputs import ChatResult
-from langchain_core.outputs.chat_generation import ChatGeneration
+from pydantic import BaseModel
 
+from llamka.llore.api import ChatMsg, ChatResponse, TooledMessages
 
-def base_message_to_dict(message: BaseMessage) -> dict[str, Any]:
-    return {"role": message.type, "content": message.content}
+logger = logging.getLogger(__name__)
 
 
-def response_to_chat_result(response: dict[str, Any]) -> ChatResult:
+def flatten_tooled_messages(
+    msgs: list[ChatMsg], expand_tooled: Callable[[ChatMsg], bool] = lambda msg: True
+) -> list[ChatMsg]:
+    def _flatten(msg: ChatMsg) -> Generator[ChatMsg, None, None]:
+        if msg.tooled is not None and expand_tooled(msg):
+            yield from msg.tooled.tooled_messages
+        else:
+            yield msg
+
+    return [m for p in msgs for m in _flatten(p)]
+
+
+def extract_tool_name(msg: ChatMsg | str) -> str | None:
+    role = msg if isinstance(msg, str) else msg.role
+    if role.startswith("tool:"):
+        return role[5:]
+    return None
+
+
+def response_to_chat_result(response: dict[str, Any]) -> ChatResponse:
     # Handle OpenAI format
     if "choices" in response:
         choices = response["choices"]
@@ -35,12 +55,43 @@ def response_to_chat_result(response: dict[str, Any]) -> ChatResult:
     else:
         raise ValueError(f"Unsupported response format: {response}")
 
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=ChatMessage(
-                    content=content, role=role, additional_kwargs={"created": created.isoformat()}
+    return ChatResponse(generation=ChatMsg(content=content, role=role, created=created))
+
+
+class Tool(metaclass=ABCMeta):
+    config_type: ClassVar[type[BaseModel]]
+    name: str
+
+    def __init__(self, name: str):
+        self.name = name
+
+    @abstractmethod
+    def __call__(self, input: ChatMsg) -> list[ChatMsg]:
+        raise NotImplementedError
+
+
+class ToolMap:
+    tools: dict[str, Tool]
+
+    def __init__(self):
+        self.tools = {}
+
+    def update(self, tool: Tool):
+        self.tools[tool.name] = tool
+
+    def has_tool(self, input: ChatMsg) -> bool | None:
+        tool_name = extract_tool_name(input)
+        return None if tool_name is None else tool_name in self.tools
+
+    def __call__(self, input: ChatMsg) -> bool:
+        tool_name = extract_tool_name(input)
+        if tool_name:
+            try:
+                tooled_msgs = self.tools[tool_name](input)
+                input.tooled = TooledMessages(
+                    tooled_messages=tooled_msgs, tooled_at=datetime.now(UTC), tooled_by=tool_name
                 )
-            )
-        ]
-    )
+                return True
+            except KeyError:
+                logger.warning(f"No such tool: {tool_name}")
+        return False

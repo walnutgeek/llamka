@@ -12,7 +12,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from typing_extensions import override
 
 from llamka import random_port
-from llamka.periodic import PeriodicTask, run_all
+from llamka.periodic import Moment, PeriodicTask, run_all
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,9 @@ log = logging.getLogger(__name__)
 async def get_json(
     url: str | HTTPRequest, to_json: Callable[[str | bytes | bytearray], Any] = json.loads
 ) -> Any:
+    moment = Moment.start()
     response = await AsyncHTTPClient().fetch(url)
+    log.info(f"Request took {moment.elapsed()}s")
     log.debug(f"Response: {response.body}")
     return to_json(response.body)
 
@@ -245,7 +247,7 @@ class App:
         return self._started and not self._stopping
 
     def shutdown(self, *args: Any, **kwargs: Any):
-        log.info(f"Stopping {self.name} {args} {kwargs}")
+        log.warning(f"Stopping {self.name} {args} {kwargs}")
         if self.shutdown_event is not None:
             self.shutdown_event.set()
 
