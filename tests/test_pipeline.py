@@ -21,7 +21,9 @@ tst_pdfs = Path("tests/pdfs")
 
 
 def test_file_state():
-    ff = {f.name: FileState(f).sha256() for f in sorted(tst_pdfs.iterdir())}
+    ff = {
+        f.name: FileState(f).sha256() for f in sorted(tst_pdfs.iterdir()) if f.name.endswith(".pdf")
+    }
     print(ff)
     assert ff == {
         "Crypto101.pdf": "527c06ac5a3e3c8f997327e76b7fa5f29caff689c55b44d7b049b77b0f209503",

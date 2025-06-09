@@ -1,7 +1,9 @@
 import base64
 import json
 import logging
+import uuid
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -55,13 +57,23 @@ class LLMModelConfig(BaseModel):
         log.debug(f"Request body: {req_body}")
         headers = {}
         if self.headers:
-            headers.update(self.headers)
+            for k, v in self.headers.items():
+                if v is None:
+                    n = k.lower().replace("-", "_")
+                    if "timestamp" in n:
+                        v = str(datetime.now().replace(microsecond=0).astimezone().isoformat())
+                    if "request_id" in n:
+                        v = str(uuid.uuid1())
+                    else:
+                        continue
+                headers[k] = v
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json"
+        log.debug(f"Request before Authorization headers: {headers}")
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
         if self.basic_auth:
             headers["Authorization"] = f"Basic {self.basic_auth.encode()}"
-        headers["Content-Type"] = "application/json"
-        headers["Accept"] = "application/json"
         req = HTTPRequest(
             url=self.url,
             method="POST",

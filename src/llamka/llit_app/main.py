@@ -24,7 +24,7 @@ def send_chat_request(
 ) -> ChatResponse:
     url = "http://localhost:7532/chats"
     request = ChatRequest(messages=messages, bot_name=bot_name, llm_name=llm_name)
-    response = requests.post(url, json=request.model_dump())
+    response = requests.post(url, json=request.model_dump(mode="json"))
     if response.status_code != 200:
         raise Exception(f"Error: {response.status_code} - {response.text}")
     return ChatResponse.model_validate_json(response.content)
