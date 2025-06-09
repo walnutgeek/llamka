@@ -36,7 +36,8 @@ class LloreService(AppService[LloreState]):
 
     def __init__(self):
         super().__init__()
-        self.add_periodic(30, self._process_files)
+        self.add_periodic(60, self._process_files)
+        self.add_periodic(2, lambda: None)  # to make it quit on ctrl-c quickly
         service = self
 
         class ChatHandler(tornado.web.RequestHandler):
@@ -79,7 +80,7 @@ class LloreService(AppService[LloreState]):
         moment = Moment.start()
         logger.info("Processing files")
         self.app_state.llore.process_files()
-        logger.info(f"Finished processing files in {moment.elapsed()}s")
+        logger.info(f"Finished processing files: {moment.capture('finished')}")
 
 
 def run_server(port: int = 7532, debug: bool = False):

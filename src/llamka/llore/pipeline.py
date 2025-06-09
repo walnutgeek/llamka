@@ -3,6 +3,11 @@ import logging
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
+
+from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 
 from llamka.llore.api import ChatMsg, ChatResponse, Models
 from llamka.llore.config import BotConfig, Config, load_config
@@ -99,14 +104,34 @@ class Llore:
     async def query_bot(
         self, bot_name: str, messages: list[ChatMsg], llm_name: str | None = None
     ) -> ChatResponse:
-        if llm_name is None:
-            llm_name = self.bots[bot_name].model.name
-        # for m in messages:
-        #     if self.tool_map.has_tool(m):
+        bot_cfg = self.bots[bot_name]
+        if bot_cfg.rag is not None and len(messages) > 0 and messages[-1].role == "user":
+            question = messages[-1].content
 
-        #         tool_name = m.role[:-5]
-        #         await self.tool_message(tool_name, m)
-        #         m = update_tooled_messages(m, tool_name)
+            db = get_vector_collection(self.config, bot_cfg.rag.vector_db_collection)
+
+            retriever = db.as_retriever()
+            template = """Answer the question based only on the following context:
+{context}
+
+Please provide document name and page numbers as reference.
+
+Question: {question}
+"""
+            prompt = ChatPromptTemplate.from_template(template)
+
+            retrieval_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt
+            promptValue: ChatPromptValue = cast(
+                ChatPromptValue, await retrieval_chain.ainvoke(question)
+            )
+            m = promptValue.to_messages()[-1]
+            # logger.debug(f"Retrieved mess age: {type(mm)} {len(mm)} {mm}")
+            messages[-1] = ChatMsg(role="user", content=m.content)  # pyright: ignore [reportArgumentType]
+            # TODO: clean up later
+
+        if llm_name is None:
+            llm_name = bot_cfg.model.name
+
         return await self.query_llm(llm_name, messages)
 
     def get_models(self) -> Models:
@@ -119,32 +144,6 @@ class Llore:
 
     def open_db(self):
         return open_sqlite_db(self.adjust_path(self.config.state_path / "state.db"))
-
-    #     async def ask_bot(
-    #         self, bot_name: str, question: str, previous_messages: list[ChatMessage] | None = None
-    #     ) -> ChatResult:
-    #         if previous_messages is None:
-    #             previous_messages = []
-    #         bot_cfg = self.bots[bot_name]
-
-    #         db = get_vector_collection(self.config, bot_cfg.vector_db_collection)
-
-    #         retriever = db.as_retriever()
-    #         template = """Answer the question based only on the following context:
-    # {context}
-
-    # Please provide document name and page numbers as reference.
-
-    # Question: {question}
-    # """
-    #         prompt = ChatPromptTemplate.from_template(template)
-
-    #         retrieval_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt
-    #         message = await retrieval_chain.ainvoke(question)
-    #         model = BotChatModel(self, bot_name)
-    #         return await model.agenerate(
-    #             messages=[*previous_messages, BaseMessage(content=message, type="user")]
-    #         )
 
     def process_files(self):
         file_states = FileStates()

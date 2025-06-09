@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
@@ -11,14 +10,14 @@ class Models(BaseModel):
 
 class TooledMessages(BaseModel):
     tooled_messages: list["ChatMsg"]
-    tooled_at: datetime
+    # tooled_at: datetime
     tooled_by: str
 
 
 class ChatMsg(BaseModel):
     role: str
     content: str
-    created: datetime | None = Field(default=None)
+    # created: datetime | None = Field(default=None)
     tooled: TooledMessages | None = Field(default=None)
 
     def to_output_dict(self) -> dict[str, Any]:

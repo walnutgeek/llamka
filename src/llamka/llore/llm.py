@@ -55,7 +55,8 @@ def response_to_chat_result(response: dict[str, Any]) -> ChatResponse:
     else:
         raise ValueError(f"Unsupported response format: {response}")
 
-    return ChatResponse(generation=ChatMsg(content=content, role=role, created=created))
+    logger.debug(f"Response: {created}")
+    return ChatResponse(generation=ChatMsg(content=content, role=role))
 
 
 class Tool(metaclass=ABCMeta):
@@ -88,9 +89,8 @@ class ToolMap:
         if tool_name:
             try:
                 tooled_msgs = self.tools[tool_name](input)
-                input.tooled = TooledMessages(
-                    tooled_messages=tooled_msgs, tooled_at=datetime.now(UTC), tooled_by=tool_name
-                )
+                input.tooled = TooledMessages(tooled_messages=tooled_msgs, tooled_by=tool_name)
+                # TODO: tooled_at tooled_at=datetime.now(UTC),
                 return True
             except KeyError:
                 logger.warning(f"No such tool: {tool_name}")
