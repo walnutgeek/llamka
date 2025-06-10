@@ -62,7 +62,7 @@ class LLMModelConfig(BaseModel):
                     n = k.lower().replace("-", "_")
                     if "timestamp" in n:
                         v = str(datetime.now().replace(microsecond=0).astimezone().isoformat())
-                    if "request_id" in n:
+                    elif "request_id" in n:
                         v = str(uuid.uuid1())
                     else:
                         continue
