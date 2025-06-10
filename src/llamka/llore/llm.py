@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def flatten_tooled_messages(
-    msgs: list[ChatMsg], expand_tooled: Callable[[ChatMsg], bool] = lambda msg: True
+    msgs: list[ChatMsg], expand_tooled: Callable[[ChatMsg], bool] = lambda _: True
 ) -> list[ChatMsg]:
     def _flatten(msg: ChatMsg) -> Generator[ChatMsg, None, None]:
         if msg.tooled is not None and expand_tooled(msg):
