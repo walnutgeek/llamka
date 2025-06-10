@@ -35,7 +35,7 @@ DIALECTS={
         "model":"modelId", 
         "messages": "chatCompletionMessages", 
         "role": "promptRole", 
-        "content": "promptRole",
+        "content": "prompt",
     }}
 
 def transate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
