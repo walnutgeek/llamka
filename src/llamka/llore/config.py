@@ -36,6 +36,7 @@ DIALECTS={
         "messages": "chatCompletionMessages", 
         "role": "promptRole", 
         "content": "prompt",
+        "stream": None
     }}
 
 def transate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
@@ -49,6 +50,8 @@ def transate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
         new_json = {}
         for k, v in json.items():
             new_k = dictionary.get(k, k)
+            if new_k is None:
+                continue
             if isinstance(v, dict):
                 v = transate(dialect, v)
             elif isinstance(v, list):
