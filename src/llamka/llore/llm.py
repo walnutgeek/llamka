@@ -52,6 +52,10 @@ def response_to_chat_result(response: dict[str, Any]) -> ChatResponse:
         content = content[0]["text"]
         role = response["role"]
         created = datetime.now(UTC)
+    elif "chatCompletion" in response:
+        content = response["chatCompletion"]["chatCompletionContent"]
+        role = "assistant"
+        created = datetime.now(UTC)
     else:
         raise ValueError(f"Unsupported response format: {response}")
 
