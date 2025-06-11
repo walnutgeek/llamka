@@ -26,6 +26,7 @@ from llamka.llore.vector import (
     get_vector_collection,
     load_document_into_chunks,
 )
+from llamka.misc import ensure_dir
 
 logger = logging.getLogger("llore.pipeline")
 
@@ -137,13 +138,8 @@ Question: {question}
     def get_models(self) -> Models:
         return Models(llms=list(self.config.llm_models.keys()), bots=list(self.bots.keys()))
 
-    def adjust_path(self, path: Path) -> Path:
-        if self.root is not None:
-            return self.root / path
-        return path
-
     def open_db(self):
-        return open_sqlite_db(self.adjust_path(self.config.state_path / "state.db"))
+        return open_sqlite_db(ensure_dir(self.config.state_path) / "state.db")
 
     def process_files(self):
         file_states = FileStates()

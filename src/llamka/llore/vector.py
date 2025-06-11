@@ -3,6 +3,7 @@ import os
 from collections.abc import Generator
 from pathlib import Path
 
+import chromadb.config
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
@@ -60,8 +61,13 @@ def get_vector_collection(config: Config, collection: str) -> Chroma:
                 logger.info(f"Loading embeddings from hf site: {emb_cfg.model_name}")
                 embeddings = load_embeddings()
 
-    return Chroma(
+    client_settings = chromadb.config.Settings(
+        is_persistent=True,
         persist_directory=str(ensure_dir(db_cfg.dir)),
+        anonymized_telemetry=False,
+    )
+    return Chroma(
+        client_settings=client_settings,
         embedding_function=embeddings,  # pyright: ignore[reportPossiblyUnboundVariable]
         collection_name=collection,
     )

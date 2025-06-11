@@ -30,22 +30,25 @@ class BasicAuth(BaseModel):
     def encode(self) -> str:
         return base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
 
-DIALECTS={
-    "copilot": {
-        "model":"modelId", 
-        "messages": "chatCompletionMessages", 
-        "role": "promptRole", 
-        "content": "prompt",
-        "stream": None
-    }}
 
-def transate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
+DIALECTS = {
+    "copilot": {
+        "model": "modelId",
+        "messages": "chatCompletionMessages",
+        "role": "promptRole",
+        "content": "prompt",
+        "stream": None,
+    }
+}
+
+
+def translate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
     if dialect == "auto":
         return json
     assert dialect in DIALECTS, f"Unknown dialect: {dialect}"
     dictionary = DIALECTS[dialect]
     if isinstance(json, list):
-        return [transate(dialect, v) for v in json]
+        return [translate(dialect, v) for v in json]
     elif isinstance(json, dict):
         new_json = {}
         for k, v in json.items():
@@ -53,18 +56,19 @@ def transate(dialect: Literal["auto", "copilot"], json: Any) -> Any:
             if new_k is None:
                 continue
             if isinstance(v, dict):
-                v = transate(dialect, v)
+                v = translate(dialect, v)
             elif isinstance(v, list):
-                v = [transate(dialect, v) for v in v]
+                v = [translate(dialect, v) for v in v]
             new_json[new_k] = v
         return new_json
     else:
         return json
 
+
 class LLMModelConfig(BaseModel):
     model_name: str
     dialect: Literal["auto", "copilot"] = Field(default="auto")
-    context_window: int|None = Field(default=None)
+    context_window: int | None = Field(default=None)
     url: str
     stream: bool = Field(default=False)
     api_key: str | None = Field(default=None)
@@ -72,21 +76,18 @@ class LLMModelConfig(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict)
     headers: dict[str, Any] = Field(default_factory=dict)
 
-    
-
     async def query(
         self,
         messages: list[dict[str, Any]],
         to_json: Callable[[Any], Any] = json.loads,
         request_timeout: float = 100,
     ) -> Any:
-        
         req_body: dict[str, Any] = {
             "model": self.model_name,
             "messages": messages,
         }
         if self.dialect != "auto":
-            req_body = transate(self.dialect, req_body)
+            req_body = translate(self.dialect, req_body)
         if self.params:
             req_body.update(self.params)
         req_body["stream"] = self.stream
