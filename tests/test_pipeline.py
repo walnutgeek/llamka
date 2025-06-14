@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from llamka.llore.config import Config
-from llamka.llore.pipeline import FileState, Llore
-from llamka.llore.state import query_db
-from llamka.llore.vector import gen_matching_snapshots, get_vector_collection
-from llamka.misc import delete_file_ensure_parent_dir
+from botglue.llore.config import Config
+from botglue.llore.pipeline import FileState, Llore
+from botglue.llore.state import query_db
+from botglue.llore.vector import gen_matching_snapshots, get_vector_collection
+from botglue.misc import delete_file_ensure_parent_dir
 
 state_db = delete_file_ensure_parent_dir("data/state/state.db")
 

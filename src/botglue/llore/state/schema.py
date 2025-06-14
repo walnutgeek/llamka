@@ -6,7 +6,7 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, Field
 
-from llamka.llore.state import DbModel, execute_sql, from_multi_model_row, open_sqlite_db
+from botglue.llore.state import DbModel, execute_sql, from_multi_model_row, open_sqlite_db
 
 logger = logging.getLogger("llore.state.schema")
 

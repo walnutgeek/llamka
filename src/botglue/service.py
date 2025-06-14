@@ -11,8 +11,8 @@ import tornado.web
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from typing_extensions import override
 
-from llamka import random_port
-from llamka.periodic import Moment, PeriodicTask, run_all
+from botglue import random_port
+from botglue.periodic import Moment, PeriodicTask, run_all
 
 log = logging.getLogger(__name__)
 

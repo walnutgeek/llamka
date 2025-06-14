@@ -1935,7 +1935,7 @@ wheels = [
 ]
 
 [[package]]
-name = "llamka"
+name = "botglue"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },

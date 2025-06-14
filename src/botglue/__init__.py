@@ -16,44 +16,44 @@ log = logging.getLogger(__name__)
 
 class GlobalRef:
     """
-    >>> ref = GlobalRef('llamka:GlobalRef')
+    >>> ref = GlobalRef('botglue:GlobalRef')
     >>> ref
-    GlobalRef('llamka:GlobalRef')
+    GlobalRef('botglue:GlobalRef')
     >>> ref.get_instance().__name__
     'GlobalRef'
     >>> ref.is_module()
     False
     >>> ref.get_module().__name__
-    'llamka'
+    'botglue'
     >>> grgr = GlobalRef(GlobalRef)
     >>> grgr
-    GlobalRef('llamka:GlobalRef')
+    GlobalRef('botglue:GlobalRef')
     >>> grgr.get_instance()
-    <class 'llamka.GlobalRef'>
+    <class 'botglue.GlobalRef'>
     >>> grgr.is_class()
     True
     >>> grgr.is_function()
     False
     >>> grgr.is_module()
     False
-    >>> uref = GlobalRef('llamka:')
+    >>> uref = GlobalRef('botglue:')
     >>> uref.is_module()
     True
     >>> uref.get_module().__name__
-    'llamka'
-    >>> uref = GlobalRef('llamka')
+    'botglue'
+    >>> uref = GlobalRef('botglue')
     >>> uref.is_module()
     True
     >>> uref = GlobalRef(uref)
     >>> uref.is_module()
     True
     >>> uref.get_module().__name__
-    'llamka'
+    'botglue'
     >>> uref = GlobalRef(uref.get_module())
     >>> uref.is_module()
     True
     >>> uref.get_module().__name__
-    'llamka'
+    'botglue'
     """
 
     module: str
@@ -134,12 +134,12 @@ class Logic:
 
 def get_module(name: str) -> ModuleType:
     """
-    >>> type(get_module('llamka'))
+    >>> type(get_module('botglue'))
     <class 'module'>
-    >>> get_module('llamka.c99')
+    >>> get_module('botglue.c99')
     Traceback (most recent call last):
     ...
-    ModuleNotFoundError: No module named 'llamka.c99'
+    ModuleNotFoundError: No module named 'botglue.c99'
     """
     if name in sys.modules:
         return sys.modules[name]

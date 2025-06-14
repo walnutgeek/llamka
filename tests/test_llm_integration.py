@@ -1,7 +1,7 @@
 import pytest
 
 # from langchain_core.messages import HumanMessage, SystemMessage
-# from llamka.llore.llm import get_llm
+# from botglue.llore.llm import get_llm
 
 
 # This test will only run when --run-integration flag is provided

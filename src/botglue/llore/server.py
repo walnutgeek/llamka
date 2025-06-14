@@ -5,10 +5,10 @@ from pathlib import Path
 import tornado.web
 from typing_extensions import override
 
-from llamka.llore.api import ChatRequest, Models
-from llamka.llore.pipeline import Llore
-from llamka.periodic import Moment
-from llamka.service import App, AppService, AppState, PortSeekStrategy
+from botglue.llore.api import ChatRequest, Models
+from botglue.llore.pipeline import Llore
+from botglue.periodic import Moment
+from botglue.service import App, AppService, AppState, PortSeekStrategy
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

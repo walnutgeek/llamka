@@ -4,8 +4,8 @@ from typing import Any
 
 import pytest
 
-from llamka.llore.config import BotConfig, Config, FileGlob, load_config
-from llamka.misc import EnsureJson
+from botglue.llore.config import BotConfig, Config, FileGlob, load_config
+from botglue.misc import EnsureJson
 
 
 def sanitize_api_key(o: Any) -> Any:

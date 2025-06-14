@@ -7,9 +7,9 @@ import tornado.web
 from pydantic import BaseModel, Field
 from typing_extensions import override
 
-from llamka.llore.pipeline import Llore
-from llamka.llore.state.schema import ChatMessage
-from llamka.service import AppService, AppState
+from botglue.llore.pipeline import Llore
+from botglue.llore.state.schema import ChatMessage
+from botglue.service import AppService, AppState
 
 logger = logging.getLogger("llore.chat")
 

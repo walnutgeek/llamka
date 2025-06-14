@@ -9,8 +9,8 @@ from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from llamka.llore.config import Config
-from llamka.misc import ensure_dir
+from botglue.llore.config import Config
+from botglue.misc import ensure_dir
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 

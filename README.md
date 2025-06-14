@@ -1,10 +1,10 @@
-# llamka
+# botglue
  
-[![CI](https://github.com/walnutgeek/llamka/actions/workflows/ci.yml/badge.svg)](https://github.com/walnutgeek/llamka/actions/workflows/ci.yml)
+[![CI](https://github.com/walnutgeek/botglue/actions/workflows/ci.yml/badge.svg)](https://github.com/walnutgeek/botglue/actions/workflows/ci.yml)
 
 MLOps for building second brain
 
-There is few principles we want to build llamka around
+There is few principles we want to build botglue around
 
 
 | Principle | Because |
@@ -19,7 +19,7 @@ There is few principles we want to build llamka around
 
 ## Architecture
 
-* llore - (llamka-core) Tornado App that keep everything running. llore provides api and all other services built on top of it
+* llore - (botglue-core) Tornado App that keep everything running. llore provides api and all other services built on top of it
     * MVP
         - [x] provide abstraction interface over LLM providers (local: ollama;  remote: openai,  claude;)
         - [x] maintain external document locations/versions and rebuild vector db collections on changes

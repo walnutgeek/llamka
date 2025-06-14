@@ -2,7 +2,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, final
 
-from llamka import GlobalRef, Logic
+from botglue import GlobalRef, Logic
 
 
 def s2():

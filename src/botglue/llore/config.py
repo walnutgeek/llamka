@@ -10,8 +10,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 from tornado.httpclient import HTTPRequest
 
-from llamka.llore.utils import get_adjust_to_root_modifier, modify_path_attributes
-from llamka.service import get_json
+from botglue.llore.utils import get_adjust_to_root_modifier, modify_path_attributes
+from botglue.service import get_json
 
 log = logging.getLogger(__name__)
 

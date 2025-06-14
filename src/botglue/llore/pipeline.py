@@ -9,11 +9,11 @@ from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
-from llamka.llore.api import ChatMsg, ChatResponse, Models
-from llamka.llore.config import BotConfig, Config, load_config
-from llamka.llore.llm import response_to_chat_result
-from llamka.llore.state import open_sqlite_db
-from llamka.llore.state.schema import (
+from botglue.llore.api import ChatMsg, ChatResponse, Models
+from botglue.llore.config import BotConfig, Config, load_config
+from botglue.llore.llm import response_to_chat_result
+from botglue.llore.state import open_sqlite_db
+from botglue.llore.state.schema import (
     ActionType,
     RagAction,
     RagActionCollection,
@@ -22,11 +22,11 @@ from llamka.llore.state.schema import (
     create_tables,
     select_all_active_sources,
 )
-from llamka.llore.vector import (
+from botglue.llore.vector import (
     get_vector_collection,
     load_document_into_chunks,
 )
-from llamka.misc import ensure_dir
+from botglue.misc import ensure_dir
 
 logger = logging.getLogger("llore.pipeline")
 

@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from llamka.periodic import (
+from botglue.periodic import (
     EPOCH_ZERO,
     Interval,
     IntervalUnit,

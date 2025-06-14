@@ -1,7 +1,7 @@
 import pytest
 
-from llamka.llore.api import ChatResponse
-from llamka.llore.llm import response_to_chat_result
+from botglue.llore.api import ChatResponse
+from botglue.llore.llm import response_to_chat_result
 
 responses = {}
 responses["4o"] = {

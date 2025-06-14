@@ -9,7 +9,7 @@ from typing import Annotated, Any, final
 from pydantic import BeforeValidator, PlainSerializer, WithJsonSchema
 from typing_extensions import override
 
-from llamka import str_or_none
+from botglue import str_or_none
 
 log = logging.getLogger(__name__)
 

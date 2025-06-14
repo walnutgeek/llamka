@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
-from llamka.llore.api import ChatMsg, ChatResponse, TooledMessages
+from botglue.llore.api import ChatMsg, ChatResponse, TooledMessages
 
 logger = logging.getLogger(__name__)
 

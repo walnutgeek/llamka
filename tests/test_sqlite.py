@@ -5,19 +5,19 @@ from pathlib import Path
 
 import pytest
 
-from llamka.llore.state import (
+from botglue.llore.state import (
     FieldInfo,
     TypeInfo,
     open_sqlite_db,
 )
-from llamka.llore.state.schema import (
+from botglue.llore.state.schema import (
     RagAction,
     RagActionCollection,
     RagSource,
     create_schema,
     select_all_active_sources,
 )
-from llamka.misc import delete_file_ensure_parent_dir
+from botglue.misc import delete_file_ensure_parent_dir
 
 
 def test_type_info():

@@ -8,7 +8,7 @@ import pytest
 import tornado
 from typing_extensions import override
 
-from llamka.service import BIND_ERRNO, App, AppService, AppState, PortSeekStrategy, get_json
+from botglue.service import BIND_ERRNO, App, AppService, AppState, PortSeekStrategy, get_json
 
 
 class OkService(AppService[AppState]):
@@ -125,7 +125,7 @@ async def test_conflict():
 
 @pytest.mark.asyncio
 async def test_sequential(caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.DEBUG, logger="llamka.service")
+    caplog.set_level(logging.DEBUG, logger="botglue.service")
     app = App("test", AppState(OkService(), port=8090), AppState(CheckOkService(), port=8090))
     with TerminateAppTask(app, 1):
         await app.run()

@@ -4,7 +4,7 @@ from importlib.resources import files  # Python ≥3.9
 from streamlit.web import cli as stcli  # Streamlit ≥1.11
 
 # locate app.py inside the installed wheel
-app_path = str(files("llamka") / "llit_app/main.py")
+app_path = str(files("botglue") / "llit_app/main.py")
 streamlit_cmd = ["streamlit", "run", app_path]
 
 

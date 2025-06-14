@@ -1,7 +1,7 @@
 import requests
 import streamlit as st
 
-from llamka.llore.api import ChatMsg, ChatRequest, ChatResponse, Models
+from botglue.llore.api import ChatMsg, ChatRequest, ChatResponse, Models
 
 
 def init_session_state():
@@ -30,7 +30,7 @@ def send_chat_request(
     return ChatResponse.model_validate_json(response.content)
 
 
-st.title("Llamka Chat")
+st.title("botglue Chat")
 
 init_session_state()
 
