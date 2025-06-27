@@ -4,6 +4,8 @@
 
 MLOps for building second brain
 
+
+
 There is few principles we want to build botglue around
 
 
@@ -43,6 +45,8 @@ There is few principles we want to build botglue around
 
 
 Got API and streamlit endpoints working, almost MVP!!!
+
+[DeepWiki](https://deepwiki.com/walnutgeek/botglue)
 
 ![Screenshot_2025-06-08](Screenshot_2025-06-08.png)
 
