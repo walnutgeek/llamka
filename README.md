@@ -25,7 +25,7 @@ There is few principles we want to build botglue around
     * MVP
         - [x] provide abstraction interface over LLM providers (local: ollama;  remote: openai,  claude;)
         - [x] maintain external document locations/versions and rebuild vector db collections on changes
-        - [ ] augmentation pipelines and chatbot config
+        - [x] augmentation pipelines and chatbot config
         - [x] completion api to interact with configured models and chatbots
     * later
         - [ ] store chatbot interactions in oumi conversation format per user if instructed
